@@ -1,0 +1,7 @@
+apiVersion: hackathon.kaiyuanshe.cn/v1
+kind: Experiment
+metadata:
+  name: experiment-sample
+spec:
+  # Add fields here
+  foo: bar

@@ -1,0 +1,13 @@
+domain: kaiyuanshe.cn
+repo: cloudengine
+resources:
+- group: hackathon
+  kind: CustomCluster
+  version: v1
+- group: hackathon
+  kind: Template
+  version: v1
+- group: hackathon
+  kind: Experiment
+  version: v1
+version: "2"
