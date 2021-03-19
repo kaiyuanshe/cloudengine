@@ -25,17 +25,23 @@ import (
 
 // CustomClusterSpec defines the desired state of CustomCluster
 type CustomClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of CustomCluster. Edit CustomCluster_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	KubeApiServer string `json:"apiServer"`
+	Namespace     string `json:"namespace"`
+	CaBundle      string `json:"caBundle"`
+	TokenSecret   string `json:"tokenSecret"`
 }
+
+type ClusterStatus string
+
+const (
+	ClusterReady ClusterStatus = "Ready"
+	ClusterLost  ClusterStatus = "Lost"
+)
 
 // CustomClusterStatus defines the observed state of CustomCluster
 type CustomClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	ClusterStatus ClusterStatus `json:"clusterStatus"`
+	Message       string        `json:"message,omitempty"`
 }
 
 // +kubebuilder:object:root=true

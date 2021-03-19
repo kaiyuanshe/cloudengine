@@ -20,27 +20,52 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ExperimentSpec defines the desired state of Experiment
 type ExperimentSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Template          string  `json:"template"`
+	CustomClusterName *string `json:"customClusterName"`
+}
 
-	// Foo is an example field of Experiment. Edit Experiment_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type ExperimentEnvStatus string
+
+const (
+	ExperimentCreated ExperimentEnvStatus = "Created"
+	ExperimentRunning ExperimentEnvStatus = "Running"
+	ExperimentStop    ExperimentEnvStatus = "Stop"
+)
+
+type ConditionStatus string
+
+const (
+	ConditionTrue    ConditionStatus = "True"
+	ConditionFalse   ConditionStatus = "False"
+	ConditionUnknown ConditionStatus = "Unknown"
+)
+
+type ExperimentConditionType string
+
+const (
+	PodInitialized ExperimentConditionType = "Initialized"
+	PodReady       ExperimentConditionType = "Ready"
+)
+
+type Condition struct {
+	Type    ExperimentConditionType `json:"type"`
+	Status  ConditionStatus         `json:"status"`
+	Reason  string                  `json:"reason"`
+	Message string                  `json:"message"`
 }
 
 // ExperimentStatus defines the observed state of Experiment
 type ExperimentStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Status     ExperimentEnvStatus `json:"status"`
+	Conditions []Condition         `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true
 
 // Experiment is the Schema for the experiments API
+// +kubebuilder:subresource:status
 type Experiment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
