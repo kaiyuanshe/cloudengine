@@ -25,23 +25,21 @@ import (
 
 // CustomClusterSpec defines the desired state of CustomCluster
 type CustomClusterSpec struct {
-	KubeApiServer string `json:"apiServer"`
-	Namespace     string `json:"namespace"`
-	CaBundle      string `json:"caBundle"`
-	TokenSecret   string `json:"tokenSecret"`
 }
 
 type ClusterStatus string
 
 const (
-	ClusterReady ClusterStatus = "Ready"
-	ClusterLost  ClusterStatus = "Lost"
+	ClusterReady        ClusterStatus = "Ready"
+	ClusterOutOfControl ClusterStatus = "OutOfControl"
+	ClusterLost         ClusterStatus = "Lost"
+	ClusterUnknown      ClusterStatus = "Unknown"
 )
 
 // CustomClusterStatus defines the observed state of CustomCluster
 type CustomClusterStatus struct {
-	ClusterStatus ClusterStatus `json:"clusterStatus"`
-	Message       string        `json:"message,omitempty"`
+	Status     ClusterStatus `json:"status"`
+	Conditions []Condition   `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -62,6 +60,30 @@ type CustomClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CustomCluster `json:"items"`
+}
+
+type ClusterConditionType string
+type ClusterConditionStatus string
+
+const (
+	ClusterInit         ClusterConditionType = "Init"
+	ClusterFirstConnect ClusterConditionType = "FirstConnect"
+	ClusterHeartbeat    ClusterConditionType = "Heartbeat"
+	ClusterResourceSync ClusterConditionType = "ResourceSync"
+	ClusterCommandApply ClusterConditionType = "CommandApply"
+
+	ClusterStatusTrue    ClusterConditionStatus = "True"
+	ClusterStatusFalse   ClusterConditionStatus = "False"
+	ClusterStatusUnknown ClusterConditionStatus = "Unknown"
+)
+
+type ClusterCondition struct {
+	Type               ClusterConditionType   `json:"type"`
+	Status             ClusterConditionStatus `json:"status"`
+	Reason             string                 `json:"reason,omitempty"`
+	Message            string                 `json:"message,omitempty"`
+	LastProbeTime      metav1.Time            `json:"lastProbeTime"`
+	LastTransitionTime metav1.Time            `json:"lastTransitionTime"`
 }
 
 func init() {

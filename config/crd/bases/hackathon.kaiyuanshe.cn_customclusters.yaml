@@ -33,30 +33,32 @@ spec:
           type: object
         spec:
           description: CustomClusterSpec defines the desired state of CustomCluster
-          properties:
-            apiServer:
-              type: string
-            caBundle:
-              type: string
-            namespace:
-              type: string
-            tokenSecret:
-              type: string
-          required:
-          - apiServer
-          - caBundle
-          - namespace
-          - tokenSecret
           type: object
         status:
           description: CustomClusterStatus defines the observed state of CustomCluster
           properties:
-            clusterStatus:
-              type: string
-            message:
+            conditions:
+              items:
+                properties:
+                  message:
+                    type: string
+                  reason:
+                    type: string
+                  status:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - message
+                - reason
+                - status
+                - type
+                type: object
+              type: array
+            status:
               type: string
           required:
-          - clusterStatus
+          - status
           type: object
       type: object
   version: v1
