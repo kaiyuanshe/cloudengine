@@ -67,9 +67,10 @@ func main() {
 	}
 
 	if err = (&controllers.CustomClusterReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("CustomCluster"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Recorder: mgr.GetEventRecorderFor("cluster-controller"),
+		Log:      ctrl.Log.WithName("controllers").WithName("CustomCluster"),
+		Scheme:   mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CustomCluster")
 		os.Exit(1)

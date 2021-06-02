@@ -33,6 +33,11 @@ spec:
           type: object
         spec:
           description: CustomClusterSpec defines the desired state of CustomCluster
+          properties:
+            clusterTimeoutSeconds:
+              type: integer
+          required:
+          - clusterTimeoutSeconds
           type: object
         status:
           description: CustomClusterStatus defines the observed state of CustomCluster
@@ -40,6 +45,12 @@ spec:
             conditions:
               items:
                 properties:
+                  lastProbeTime:
+                    format: date-time
+                    type: string
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
                   message:
                     type: string
                   reason:
@@ -49,8 +60,8 @@ spec:
                   type:
                     type: string
                 required:
-                - message
-                - reason
+                - lastProbeTime
+                - lastTransitionTime
                 - status
                 - type
                 type: object

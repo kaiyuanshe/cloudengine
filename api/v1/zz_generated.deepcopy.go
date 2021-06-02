@@ -136,8 +136,10 @@ func (in *CustomClusterStatus) DeepCopyInto(out *CustomClusterStatus) {
 	*out = *in
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make([]Condition, len(*in))
-		copy(*out, *in)
+		*out = make([]ClusterCondition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 

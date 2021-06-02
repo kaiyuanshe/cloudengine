@@ -1,4 +1,4 @@
-package cluster
+package customcluster
 
 var (
 	Host       string
