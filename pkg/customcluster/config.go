@@ -1,10 +1,12 @@
 package customcluster
 
 var (
-	Host       string
-	Port       int
-	ApiServer  string
-	AgentToken string
+	Host           string
+	Port           int
+	ApiServer      string
+	AgentToken     string
+	ClusterID      string
+	ControllerMode bool
 )
 
 /*

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,8 +77,12 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 }
 
 func (d *Driver) InitCustomCluster(ctx context.Context, status *Status) *results.Results {
-	status.Status.Status = hackathonv1.ClusterCreated
-	hackathonv1.UpdateClusterConditions(status.Status.Conditions, hackathonv1.NewClusterCondition(hackathonv1.ClusterInit, hackathonv1.ClusterStatusFalse, "", ""))
-	status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "wait for first heartbeat")
-	return results.NewResults(ctx)
+	return results.NewResults(ctx).With("init-custom-cluster", func() (reconcile.Result, error) {
+		status.Status.Status = hackathonv1.ClusterCreated
+		status.Status.ClusterID = uuid.New().String()
+		d.Log.Info("init new cluster")
+		hackathonv1.UpdateClusterConditions(status.Status.Conditions, hackathonv1.NewClusterCondition(hackathonv1.ClusterInit, hackathonv1.ClusterStatusFalse, "", ""))
+		status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "wait for first heartbeat")
+		return reconcile.Result{Requeue: true}, nil
+	})
 }

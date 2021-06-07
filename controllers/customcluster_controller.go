@@ -17,11 +17,13 @@ limitations under the License.
 package controllers
 
 import (
+	"cloudengine/pkg/annotations"
 	"cloudengine/pkg/common/event"
 	"cloudengine/pkg/common/results"
 	"cloudengine/pkg/customcluster"
 	"cloudengine/pkg/eventbus"
 	"context"
+	"fmt"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,6 +55,15 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	cluster, err := r.fetchCustomCluster(ctx, req.NamespacedName)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	if !r.ReconcileCompatibility(cluster) {
+		r.Log.Info("cluster not managed by this controller")
+		return ctrl.Result{}, nil
+	}
+
+	if err = annotations.UpdateClusterAnnotations(cluster); err != nil {
+		return ctrl.Result{}, fmt.Errorf("update cluster anntations failed: %s", err.Error())
 	}
 
 	status := customcluster.NewStatus(cluster)

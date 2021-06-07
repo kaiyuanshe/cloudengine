@@ -45,6 +45,7 @@ const (
 type CustomClusterStatus struct {
 	Status     ClusterStatus      `json:"status"`
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	ClusterID  string             `json:"clusterId"`
 }
 
 // +kubebuilder:object:root=true
