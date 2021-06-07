@@ -56,13 +56,11 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 	}
 
 	status.Status.Status = hackathonv1.ClusterReady
-	if cond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterResourceSync);
-		cond.Status == hackathonv1.ClusterStatusFalse {
+	if cond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterResourceSync); cond.Status == hackathonv1.ClusterStatusFalse {
 		status.Status.Status = hackathonv1.ClusterOutOfControl
 		status.AddEvent(corev1.EventTypeWarning, event.ReasonUnexpected, fmt.Sprintf("resource sync error: %s", cond.Message))
 	}
-	if cond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterCommandApply);
-		cond.Status == hackathonv1.ClusterStatusFalse {
+	if cond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterCommandApply); cond.Status == hackathonv1.ClusterStatusFalse {
 		status.Status.Status = hackathonv1.ClusterOutOfControl
 		status.AddEvent(corev1.EventTypeWarning, event.ReasonUnexpected, fmt.Sprintf("cluster command apply error: %s", cond.Message))
 	}

@@ -22,6 +22,7 @@ import (
 	"cloudengine/pkg/common/results"
 	"cloudengine/pkg/customcluster"
 	"cloudengine/pkg/eventbus"
+	"cloudengine/pkg/utils/logtool"
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
@@ -47,8 +48,8 @@ type CustomClusterReconciler struct {
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=customclusters/status,verbs=get;update;patch
 
 func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("customcluster", req.NamespacedName)
+	logger := r.Log.WithValues("customcluster", req.NamespacedName)
+	defer logtool.SpendTimeRecord(logger, "reconcile custom cluster")
 
 	ctx := context.Background()
 	result := results.NewResults(ctx)
@@ -58,7 +59,7 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	}
 
 	if !r.ReconcileCompatibility(cluster) {
-		r.Log.Info("cluster not managed by this controller")
+		logger.Info("cluster not managed by this controller")
 		return ctrl.Result{}, nil
 	}
 

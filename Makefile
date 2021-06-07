@@ -15,7 +15,7 @@ all: manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+	go test $(go list ./... | grep -v /vendor/)
 
 # Build manager binary
 manager: generate fmt vet
@@ -44,11 +44,11 @@ manifests: controller-gen
 
 # Run go fmt against code
 fmt:
-	go fmt ./...
+	go fmt $(go list ./... | grep -v /vendor/)
 
 # Run go vet against code
 vet:
-	go vet ./...
+	go vet $(go list ./... | grep -v /vendor/)
 
 # Generate code
 generate: controller-gen
