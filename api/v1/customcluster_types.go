@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -49,6 +48,7 @@ type CustomClusterStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // CustomCluster is the Schema for the customclusters API
 type CustomCluster struct {
@@ -127,7 +127,12 @@ func QueryClusterCondition(conditions []ClusterCondition, conditionType ClusterC
 func CheckClusterCondition(conditions []ClusterCondition, conditionType ClusterConditionType, status ClusterConditionStatus) bool {
 	cond := QueryClusterCondition(conditions, conditionType)
 	if cond == nil {
-		return false
+		if status == ClusterStatusTrue {
+			return false
+		}
+		if status == ClusterStatusFalse {
+			return true
+		}
 	}
 	return cond.Status == status
 }
@@ -149,19 +154,5 @@ func UpdateClusterConditions(conditions []ClusterCondition, condition ClusterCon
 type clusterValidation func(cluster *CustomCluster) field.ErrorList
 
 var (
-	clusterSpecWarnings = []clusterValidation{
-		checkClusterTimeoutConfig,
-	}
+	clusterSpecWarnings = []clusterValidation{}
 )
-
-func checkClusterTimeoutConfig(cluster *CustomCluster) field.ErrorList {
-	const defaultClusterTimeout = 60
-	errs := field.ErrorList{}
-
-	if cluster.Spec.ClusterTimeoutSeconds == 0 {
-		cluster.Spec.ClusterTimeoutSeconds = defaultClusterTimeout
-		errs = append(errs, field.Required(field.NewPath("spec").Child("clusterTimeoutSeconds"), fmt.Sprintf("cluster timeout set default value: %d", defaultClusterTimeout)))
-	}
-
-	return errs
-}

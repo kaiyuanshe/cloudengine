@@ -88,11 +88,20 @@ var _ = BeforeSuite(func(done Done) {
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 
+	Expect((&CustomClusterReconciler{
+		Client:   k8sClient,
+		Recorder: k8sManager.GetEventRecorderFor("cluster-controller"),
+		Log:      ctrl.Log.WithName("controllers").WithName("CustomCluster"),
+		Scheme:   k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)).Should(Succeed())
+
+	waitStart := make(chan struct{})
 	go func() {
+		close(waitStart)
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred())
 	}()
-
+	<-waitStart
 	close(done)
 }, 600)
 

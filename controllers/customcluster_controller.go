@@ -63,7 +63,7 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, nil
 	}
 
-	if err = annotations.UpdateClusterAnnotations(cluster); err != nil {
+	if err = annotations.UpdateClusterAnnotations(ctx, cluster, r.Client); err != nil {
 		return ctrl.Result{}, fmt.Errorf("update cluster anntations failed: %s", err.Error())
 	}
 
@@ -76,7 +76,7 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 func (r *CustomClusterReconciler) fetchCustomCluster(ctx context.Context, name types.NamespacedName) (*hackathonv1.CustomCluster, error) {
 	cluster := &hackathonv1.CustomCluster{}
 	if err := r.Get(ctx, name, cluster); err != nil {
-		r.Log.Error(err, "get custom cluster cr failed")
+		r.Log.Error(err, "get custom cluster cr failed", "namespace", name.Namespace, "name", name.Name)
 		return nil, err
 	}
 	return cluster, nil

@@ -23,8 +23,6 @@ type Driver struct {
 }
 
 func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results {
-	status.Status.Status = hackathonv1.ClusterUnknown
-
 	if !hackathonv1.CheckClusterCondition(
 		d.Cluster.Status.Conditions,
 		hackathonv1.ClusterInit,
@@ -40,6 +38,8 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 		return results.NewResults(ctx)
 	}
 
+	status.Status.Status = hackathonv1.ClusterUnknown
+
 	hbCond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterHeartbeat)
 	if hbCond == nil || hbCond.Status == hackathonv1.ClusterStatusFalse {
 		status.Status.Status = hackathonv1.ClusterLost
@@ -49,7 +49,7 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 	if time.Since(hbCond.LastProbeTime.Time) > time.Duration(d.Cluster.Spec.ClusterTimeoutSeconds)*time.Second {
 		status.Status.Status = hackathonv1.ClusterLost
 		status.AddEvent(corev1.EventTypeWarning, event.ReasonUnhealthy, "cluster heartbeat timeout")
-		hackathonv1.UpdateClusterConditions(
+		status.Status.Conditions = hackathonv1.UpdateClusterConditions(
 			status.Status.Conditions,
 			hackathonv1.NewClusterCondition(hackathonv1.ClusterHeartbeat, hackathonv1.ClusterStatusFalse, event.ReasonUnhealthy, "time out"))
 		return results.NewResults(ctx)
@@ -79,7 +79,7 @@ func (d *Driver) InitCustomCluster(ctx context.Context, status *Status) *results
 		status.Status.Status = hackathonv1.ClusterCreated
 		status.Status.ClusterID = uuid.New().String()
 		d.Log.Info("init new cluster")
-		hackathonv1.UpdateClusterConditions(status.Status.Conditions, hackathonv1.NewClusterCondition(hackathonv1.ClusterInit, hackathonv1.ClusterStatusFalse, "", ""))
+		status.Status.Conditions = hackathonv1.UpdateClusterConditions(status.Status.Conditions, hackathonv1.NewClusterCondition(hackathonv1.ClusterInit, hackathonv1.ClusterStatusTrue, "", ""))
 		status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "wait for first heartbeat")
 		return reconcile.Result{Requeue: true}, nil
 	})
