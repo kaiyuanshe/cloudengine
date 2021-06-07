@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,8 +28,7 @@ const (
 
 // TemplateSpec defines the desired state of Template
 type TemplateSpec struct {
-	Type        TemplateType        `json:"type"`
-	PodTemplate *v1.PodTemplateSpec `json:"podTemplate"`
+	Type TemplateType `json:"type"`
 }
 
 // +kubebuilder:object:root=true

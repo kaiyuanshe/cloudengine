@@ -18,18 +18,25 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+func init() {
+	SchemeBuilder.Register(&CustomCluster{}, &CustomClusterList{})
+}
 
 // CustomClusterSpec defines the desired state of CustomCluster
 type CustomClusterSpec struct {
+	ClusterTimeoutSeconds int      `json:"clusterTimeoutSeconds"`
+	PublishIps            []string `json:"publishIPs,omitempty"`
+	PrivateIps            []string `json:"privateIPs,omitempty"`
+	EnablePrivateIP       bool     `json:"enablePrivateIP"`
 }
 
 type ClusterStatus string
 
 const (
+	ClusterCreated      ClusterStatus = "Created"
 	ClusterReady        ClusterStatus = "Ready"
 	ClusterOutOfControl ClusterStatus = "OutOfControl"
 	ClusterLost         ClusterStatus = "Lost"
@@ -38,11 +45,13 @@ const (
 
 // CustomClusterStatus defines the observed state of CustomCluster
 type CustomClusterStatus struct {
-	Status     ClusterStatus `json:"status"`
-	Conditions []Condition   `json:"conditions,omitempty"`
+	Status     ClusterStatus      `json:"status"`
+	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	ClusterID  string             `json:"clusterId"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // CustomCluster is the Schema for the customclusters API
 type CustomCluster struct {
@@ -51,6 +60,17 @@ type CustomCluster struct {
 
 	Spec   CustomClusterSpec   `json:"spec,omitempty"`
 	Status CustomClusterStatus `json:"status,omitempty"`
+}
+
+func (c *CustomCluster) CheckForWarning() error {
+	errs := field.ErrorList{}
+	for _, f := range clusterSpecWarnings {
+		err := f(c)
+		if err != nil {
+			errs = append(errs, err...)
+		}
+	}
+	return errs.ToAggregate()
 }
 
 // +kubebuilder:object:root=true
@@ -86,6 +106,56 @@ type ClusterCondition struct {
 	LastTransitionTime metav1.Time            `json:"lastTransitionTime"`
 }
 
-func init() {
-	SchemeBuilder.Register(&CustomCluster{}, &CustomClusterList{})
+func NewClusterCondition(conditionType ClusterConditionType, status ClusterConditionStatus, reason, message string) ClusterCondition {
+	return ClusterCondition{
+		Type:               conditionType,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		LastProbeTime:      metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+	}
 }
+
+func QueryClusterCondition(conditions []ClusterCondition, conditionType ClusterConditionType) *ClusterCondition {
+	for i := range conditions {
+		if conditions[i].Type == conditionType {
+			condition := conditions[i]
+			return &condition
+		}
+	}
+	return nil
+}
+
+func CheckClusterCondition(conditions []ClusterCondition, conditionType ClusterConditionType, status ClusterConditionStatus) bool {
+	cond := QueryClusterCondition(conditions, conditionType)
+	if cond == nil {
+		if status == ClusterStatusTrue {
+			return false
+		}
+		if status == ClusterStatusFalse {
+			return true
+		}
+	}
+	return cond.Status == status
+}
+
+func UpdateClusterConditions(conditions []ClusterCondition, condition ClusterCondition) []ClusterCondition {
+	isFound := false
+	for i := range conditions {
+		if conditions[i].Type == condition.Type {
+			isFound = true
+			conditions[i] = condition
+		}
+	}
+	if !isFound {
+		conditions = append(conditions, condition)
+	}
+	return conditions
+}
+
+type clusterValidation func(cluster *CustomCluster) field.ErrorList
+
+var (
+	clusterSpecWarnings = []clusterValidation{}
+)

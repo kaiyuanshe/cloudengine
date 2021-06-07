@@ -18,7 +18,10 @@ package controllers
 
 import (
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,6 +42,7 @@ import (
 
 var cfg *rest.Config
 var k8sClient client.Client
+var k8sManager manager.Manager
 var testEnv *envtest.Environment
 
 func TestAPIs(t *testing.T) {
@@ -53,8 +57,12 @@ var _ = BeforeSuite(func(done Done) {
 	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 
 	By("bootstrapping test environment")
+	extCluster := true
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		UseExistingCluster:       &extCluster,
+		CRDDirectoryPaths:        []string{filepath.Join("..", "config", "crd", "bases")},
+		AttachControlPlaneOutput: true,
+		ControlPlaneStartTimeout: 10 * time.Minute,
 	}
 
 	var err error
@@ -70,15 +78,39 @@ var _ = BeforeSuite(func(done Done) {
 
 	// +kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             scheme.Scheme,
+		MetricsBindAddress: ":8080",
+	})
 	Expect(err).ToNot(HaveOccurred())
+	Expect(k8sManager).ToNot(BeNil())
+
+	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 
+	Expect((&CustomClusterReconciler{
+		Client:   k8sClient,
+		Recorder: k8sManager.GetEventRecorderFor("cluster-controller"),
+		Log:      ctrl.Log.WithName("controllers").WithName("CustomCluster"),
+		Scheme:   k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)).Should(Succeed())
+
+	waitStart := make(chan struct{})
+	go func() {
+		close(waitStart)
+		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		Expect(err).ToNot(HaveOccurred())
+	}()
+	<-waitStart
 	close(done)
-}, 60)
+}, 600)
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })
+
+func init() {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+}

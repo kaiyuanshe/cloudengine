@@ -1,4 +1,4 @@
-package cluster
+package customcluster
 
 import (
 	"cloudengine/pkg/types"
