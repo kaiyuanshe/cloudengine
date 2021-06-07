@@ -27,7 +27,10 @@ func init() {
 
 // CustomClusterSpec defines the desired state of CustomCluster
 type CustomClusterSpec struct {
-	ClusterTimeoutSeconds int `json:"clusterTimeoutSeconds"`
+	ClusterTimeoutSeconds int      `json:"clusterTimeoutSeconds"`
+	PublishIps            []string `json:"publishIPs,omitempty"`
+	PrivateIps            []string `json:"privateIPs,omitempty"`
+	EnablePrivateIP       bool     `json:"enablePrivateIP"`
 }
 
 type ClusterStatus string

@@ -46,7 +46,12 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 		return results.NewResults(ctx)
 	}
 
-	if time.Since(hbCond.LastProbeTime.Time) > time.Duration(d.Cluster.Spec.ClusterTimeoutSeconds)*time.Second {
+	timeout := d.Cluster.Spec.ClusterTimeoutSeconds
+	if timeout == 0 {
+		timeout = HeartbeatTimeoutSeconds
+	}
+
+	if time.Since(hbCond.LastProbeTime.Time) > time.Duration(timeout)*time.Second {
 		status.Status.Status = hackathonv1.ClusterLost
 		status.AddEvent(corev1.EventTypeWarning, event.ReasonUnhealthy, "cluster heartbeat timeout")
 		status.Status.Conditions = hackathonv1.UpdateClusterConditions(

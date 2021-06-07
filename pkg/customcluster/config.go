@@ -13,6 +13,6 @@ var (
 	Cluster lifecycle
 */
 var (
-	HeartbeatIntervalSeconds = 3
-	HeartbeatTimeoutSeconds  = 10
+	HeartbeatIntervalSeconds = 10
+	HeartbeatTimeoutSeconds  = 30
 )

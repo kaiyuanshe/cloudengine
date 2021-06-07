@@ -38,8 +38,19 @@ spec:
           properties:
             clusterTimeoutSeconds:
               type: integer
+            enablePrivateIP:
+              type: boolean
+            privateIPs:
+              items:
+                type: string
+              type: array
+            publishIPs:
+              items:
+                type: string
+              type: array
           required:
           - clusterTimeoutSeconds
+          - enablePrivateIP
           type: object
         status:
           description: CustomClusterStatus defines the observed state of CustomCluster
