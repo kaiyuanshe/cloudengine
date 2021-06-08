@@ -36,12 +36,15 @@ spec:
         spec:
           description: ExperimentSpec defines the desired state of Experiment
           properties:
-            customClusterName:
+            clusterName:
               type: string
+            pause:
+              type: boolean
             template:
               type: string
           required:
-          - customClusterName
+          - clusterName
+          - pause
           - template
           type: object
         status:
@@ -50,6 +53,12 @@ spec:
             conditions:
               items:
                 properties:
+                  lastProbeTime:
+                    format: date-time
+                    type: string
+                  lastTransitionTime:
+                    format: date-time
+                    type: string
                   message:
                     type: string
                   reason:
@@ -59,6 +68,8 @@ spec:
                   type:
                     type: string
                 required:
+                - lastProbeTime
+                - lastTransitionTime
                 - message
                 - reason
                 - status

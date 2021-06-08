@@ -17,7 +17,12 @@ limitations under the License.
 package controllers
 
 import (
+	"cloudengine/pkg/common/results"
+	"cloudengine/pkg/eventbus"
+	"cloudengine/pkg/experiment"
+	"cloudengine/pkg/utils/logtool"
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,12 +43,35 @@ type ExperimentReconciler struct {
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments/status,verbs=get;update;patch
 
 func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("experiment", req.NamespacedName)
+	ctx := context.Background()
+	logger := r.Log.WithValues("experiment", req.NamespacedName)
+	result := results.NewResults(ctx)
+	defer logtool.SpendTimeRecord(logger, "reconcile experiment")
 
-	// your logic here
+	expr, err := r.fetchExperiment(ctx, req.NamespacedName)
+	if err != nil {
+		logger.Error(err, "fetch experiment failed")
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	// expr deleted
+	if !expr.DeletionTimestamp.IsZero() {
+		eventbus.Publish(eventbus.ExperimentDeletedTopic, expr)
+		return ctrl.Result{}, nil
+	}
+
+	status := experiment.NewStatus(expr)
+	result.WithResult((&experiment.Controller{
+		Client: r.Client,
+		Logger: logger,
+	}).Reconcile(ctx, status))
+	return result.Aggregate()
+}
+
+func (r *ExperimentReconciler) fetchExperiment(ctx context.Context, name types.NamespacedName) (*hackathonv1.Experiment, error) {
+	expr := &hackathonv1.Experiment{}
+	err := r.Client.Get(ctx, name, expr)
+	return expr, err
 }
 
 func (r *ExperimentReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -51,9 +51,9 @@ type CustomClusterStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 
 // CustomCluster is the Schema for the customclusters API
+// +kubebuilder:subresource:status
 type CustomCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -133,9 +133,7 @@ func CheckClusterCondition(conditions []ClusterCondition, conditionType ClusterC
 		if status == ClusterStatusTrue {
 			return false
 		}
-		if status == ClusterStatusFalse {
-			return true
-		}
+		return true
 	}
 	return cond.Status == status
 }
