@@ -16,17 +16,15 @@ type Status struct {
 func (s *Status) UpdateExperimentStatus(state *ResourceState) {
 	s.Status.Status = hackathonv1.ExperimentCreated
 
-	pod := state.EnvPod
-	if pod == nil {
-		return
-	}
-
-	if k8stools.IsPodReady(pod) {
-		s.Status.Conditions = hackathonv1.UpdateExperimentConditions(
-			s.Status.Conditions,
-			hackathonv1.NewExperimentCondition(
-				hackathonv1.ExperimentPodReady,
-				hackathonv1.ExperimentConditionTrue, "", ""))
+	if len(state.EnvPod) > 0 {
+		pod := state.EnvPod[0]
+		if k8stools.IsPodReady(&pod) {
+			s.Status.Conditions = hackathonv1.UpdateExperimentConditions(
+				s.Status.Conditions,
+				hackathonv1.NewExperimentCondition(
+					hackathonv1.ExperimentPodReady,
+					hackathonv1.ExperimentConditionTrue, "", ""))
+		}
 	}
 
 	resources := []hackathonv1.ExperimentConditionType{
