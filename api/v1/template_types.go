@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,19 +29,6 @@ const (
 type PodTemplate struct {
 	Image   string   `json:"image"`
 	Command []string `json:"command,omitempty"`
-}
-
-func (p PodTemplate) BuildExpectPodSpec() *corev1.PodSpec {
-	spec := &corev1.PodSpec{
-		Containers: []corev1.Container{
-			{
-				Name:    "environment",
-				Image:   p.Image,
-				Command: p.Command,
-			},
-		},
-	}
-	return spec
 }
 
 // TemplateData defines the desired state of Template

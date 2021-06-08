@@ -27,6 +27,7 @@ func (c *Controller) Reconcile(ctx context.Context, status *Status) *results.Res
 	resourceState, err := NewExprResourceStatus(ctx, c.Client, status.Experiment)
 	if err != nil {
 		c.Logger.Error(err, "query experiment state failed")
+		status.AddEvent(corev1.EventTypeWarning, event.ReasonUnexpected, err.Error())
 		return result.WithError(err)
 	}
 
