@@ -130,6 +130,10 @@ func buildExpectedDataVolume(experiment *hackathonv1.Experiment) *corev1.Persist
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: experiment.Namespace,
 			Name:      dataVolumeName(experiment),
+			Labels: map[string]string{
+				LabelKeyClusterName:    experiment.Spec.ClusterName,
+				LabelKeyExperimentName: experiment.Name,
+			},
 		},
 		Spec: corev1.PersistentVolumeSpec{
 			Capacity: map[corev1.ResourceName]resource.Quantity{
@@ -151,6 +155,10 @@ func buildExpectedDataVolumeClaim(experiment *hackathonv1.Experiment) *corev1.Pe
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: experiment.Namespace,
 			Name:      dataVolumeClaimName(experiment),
+			Labels: map[string]string{
+				LabelKeyClusterName:    experiment.Spec.ClusterName,
+				LabelKeyExperimentName: experiment.Name,
+			},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},

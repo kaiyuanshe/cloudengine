@@ -11,10 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	LabelKeyExperimentName = "hackathon.kaiyuanshe.cn/experiment"
-)
-
 type ResourceState struct {
 	Cluster         *hackathonv1.CustomCluster
 	Template        *hackathonv1.Template

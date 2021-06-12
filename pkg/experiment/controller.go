@@ -93,6 +93,10 @@ func buildExpectedEnvPod(experiment *hackathonv1.Experiment, template *hackathon
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      experiment.Name,
 			Namespace: experiment.Namespace,
+			Labels: map[string]string{
+				LabelKeyClusterName:    experiment.Spec.ClusterName,
+				LabelKeyExperimentName: experiment.Name,
+			},
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
