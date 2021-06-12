@@ -16,11 +16,11 @@ const (
 )
 
 type ResourceState struct {
-	Cluster  *hackathonv1.CustomCluster
-	Template *hackathonv1.Template
-	EnvPod   []corev1.Pod
-	PV       *corev1.PersistentVolume
-	PVC      *corev1.PersistentVolumeClaim
+	Cluster         *hackathonv1.CustomCluster
+	Template        *hackathonv1.Template
+	EnvPod          []corev1.Pod
+	DataVolume      *corev1.PersistentVolume
+	DataVolumeClaim *corev1.PersistentVolumeClaim
 }
 
 func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *hackathonv1.Experiment) (*ResourceState, error) {
@@ -84,10 +84,10 @@ func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *h
 	}
 
 	return &ResourceState{
-		Cluster:  cluster,
-		Template: template,
-		EnvPod:   podList.Items,
-		PV:       pv,
-		PVC:      pvc,
+		Cluster:         cluster,
+		Template:        template,
+		EnvPod:          podList.Items,
+		DataVolume:      pv,
+		DataVolumeClaim: pvc,
 	}, nil
 }
