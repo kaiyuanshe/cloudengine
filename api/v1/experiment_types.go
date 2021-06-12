@@ -47,9 +47,10 @@ const (
 type ExperimentConditionType string
 
 const (
-	ExperimentInitialized ExperimentConditionType = "Initialized"
-	ExperimentPodReady    ExperimentConditionType = "PodReady"
-	ExperimentReady       ExperimentConditionType = "Ready"
+	ExperimentInitialized   ExperimentConditionType = "Initialized"
+	ExperimentPodReady      ExperimentConditionType = "PodReady"
+	ExperimentVolumeCreated ExperimentConditionType = "VolumeCreated"
+	ExperimentReady         ExperimentConditionType = "Ready"
 )
 
 type ExperimentCondition struct {
@@ -63,8 +64,9 @@ type ExperimentCondition struct {
 
 // ExperimentStatus defines the observed state of Experiment
 type ExperimentStatus struct {
-	Status     ExperimentEnvStatus   `json:"status"`
-	Conditions []ExperimentCondition `json:"conditions"`
+	Status      ExperimentEnvStatus   `json:"status"`
+	ClusterSync bool                  `json:"clusterSync"`
+	Conditions  []ExperimentCondition `json:"conditions"`
 }
 
 func NewExperimentCondition(conditionType ExperimentConditionType, status ExperimentConditionStatus, reason, message string) ExperimentCondition {

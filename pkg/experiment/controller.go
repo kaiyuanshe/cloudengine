@@ -35,7 +35,7 @@ func (c *Controller) Reconcile(ctx context.Context, status *Status) *results.Res
 		client:        c.Client,
 		status:        status,
 		resourceState: resourceState,
-	}).Reconcile())
+	}).Reconcile(ctx))
 
 	podResult := c.reconcileExperimentPods(ctx, status, resourceState)
 	status.UpdateExperimentStatus(resourceState)

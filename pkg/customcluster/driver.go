@@ -73,7 +73,6 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 	return results.NewResults(ctx).With("wait-next-heartbeat-check", func() (reconcile.Result, error) {
 		timeoutAt := hbCond.LastProbeTime.Time.Add(time.Duration(d.Cluster.Spec.ClusterTimeoutSeconds+1) * time.Second)
 		return reconcile.Result{
-			Requeue:      true,
 			RequeueAfter: timeoutAt.Sub(time.Now()),
 		}, nil
 	})
