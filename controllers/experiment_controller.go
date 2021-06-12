@@ -23,6 +23,7 @@ import (
 	"cloudengine/pkg/utils/logtool"
 	"context"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,8 +36,9 @@ import (
 // ExperimentReconciler reconciles a Experiment object
 type ExperimentReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Recorder record.EventRecorder
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments,verbs=get;list;watch;create;update;patch;delete
@@ -65,13 +67,31 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		Client: r.Client,
 		Logger: logger,
 	}).Reconcile(ctx, status))
-	return result.Aggregate()
+	err = r.updateStatus(ctx, status)
+	return result.WithError(err).Aggregate()
 }
 
 func (r *ExperimentReconciler) fetchExperiment(ctx context.Context, name types.NamespacedName) (*hackathonv1.Experiment, error) {
 	expr := &hackathonv1.Experiment{}
 	err := r.Client.Get(ctx, name, expr)
 	return expr, err
+}
+
+func (r *ExperimentReconciler) updateStatus(ctx context.Context, status *experiment.Status) error {
+	events, crt := status.Apply()
+	if crt == nil {
+		return nil
+	}
+
+	for _, evt := range events {
+		r.Recorder.Event(crt, evt.EventType, evt.Reason, evt.Message)
+	}
+
+	r.Log.Info("update experiment status",
+		"namespace", crt.Namespace,
+		"name", crt.Name,
+	)
+	return r.Client.Status().Update(ctx, crt)
 }
 
 func (r *ExperimentReconciler) SetupWithManager(mgr ctrl.Manager) error {

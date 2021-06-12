@@ -76,9 +76,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&controllers.ExperimentReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Experiment"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Recorder: mgr.GetEventRecorderFor("experiment-controller"),
+		Log:      ctrl.Log.WithName("controllers").WithName("Experiment"),
+		Scheme:   mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Experiment")
 		os.Exit(1)
