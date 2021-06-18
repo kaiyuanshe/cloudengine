@@ -22,6 +22,7 @@ import (
 	"cloudengine/pkg/experiment"
 	"cloudengine/pkg/utils/logtool"
 	"context"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 
@@ -57,7 +58,7 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	// expr deleted
-	if !expr.DeletionTimestamp.IsZero() {
+	if expr == nil || !expr.DeletionTimestamp.IsZero() {
 		eventbus.Publish(eventbus.ExperimentDeletedTopic, expr)
 		return ctrl.Result{}, nil
 	}
@@ -74,6 +75,9 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 func (r *ExperimentReconciler) fetchExperiment(ctx context.Context, name types.NamespacedName) (*hackathonv1.Experiment, error) {
 	expr := &hackathonv1.Experiment{}
 	err := r.Client.Get(ctx, name, expr)
+	if errors.IsNotFound(err) {
+		return nil, nil
+	}
 	return expr, err
 }
 

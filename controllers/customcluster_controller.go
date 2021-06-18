@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -58,6 +59,11 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
+	if cluster == nil {
+		eventbus.Publish(eventbus.CustomClusterDeletedTopic, cluster)
+		return ctrl.Result{}, nil
+	}
+
 	if !r.ReconcileCompatibility(cluster) {
 		logger.Info("cluster not managed by this controller")
 		return ctrl.Result{}, nil
@@ -76,6 +82,9 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 func (r *CustomClusterReconciler) fetchCustomCluster(ctx context.Context, name types.NamespacedName) (*hackathonv1.CustomCluster, error) {
 	cluster := &hackathonv1.CustomCluster{}
 	if err := r.Get(ctx, name, cluster); err != nil {
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
 		r.Log.Error(err, "get custom cluster cr failed", "namespace", name.Namespace, "name", name.Name)
 		return nil, err
 	}
