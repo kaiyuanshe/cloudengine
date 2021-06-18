@@ -64,21 +64,51 @@ func (c *Controller) reconcileExperimentPods(ctx context.Context, status *Status
 		return result.WithError(fmt.Errorf("template not found"))
 	}
 
+	if status.Experiment.Spec.Pause {
+		if status.Status.Status != hackathonv1.ExperimentStopped {
+			status.Status.Status = hackathonv1.ExperimentStopped
+			status.AddEvent(corev1.EventTypeNormal, event.ReasonStateChange, "pause experiment")
+			status.Status.Conditions = hackathonv1.UpdateExperimentConditions(
+				status.Status.Conditions, hackathonv1.NewExperimentCondition(
+					hackathonv1.ExperimentPodReady, hackathonv1.ExperimentConditionFalse, "PauseExperiment", ""))
+		}
+		if len(resState.EnvPod) > 0 {
+			for i := range resState.EnvPod {
+				needDelPod := resState.EnvPod[i]
+				_ = c.Client.Delete(ctx, &needDelPod)
+			}
+		}
+		return result
+	}
+
 	expected, err := buildExpectedEnvPod(status.Experiment, resState.Template)
 	if err != nil {
 		return result.WithError(err)
 	}
+
 	if len(resState.EnvPod) == 0 {
 		status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "create env pod")
+		status.Status.Status = hackathonv1.ExperimentCreated
 		return result.WithError(c.Client.Create(ctx, expected))
 	}
 
 	reconciled := resState.EnvPod[0]
 	return result.With("check-env-pod", func() (reconcile.Result, error) {
 		if k8stools.IsPodReady(&reconciled) {
+			if status.Status.Status != hackathonv1.ExperimentRunning {
+				status.Status.Status = hackathonv1.ExperimentRunning
+				status.Status.Conditions = hackathonv1.UpdateExperimentConditions(
+					status.Status.Conditions, hackathonv1.NewExperimentCondition(
+						hackathonv1.ExperimentPodReady, hackathonv1.ExperimentConditionTrue, "", ""))
+			}
+		} else {
+			if !status.Experiment.Spec.Pause && status.Status.Status == hackathonv1.ExperimentRunning {
+				status.Status.Status = hackathonv1.ExperimentError
+				status.AddEvent(corev1.EventTypeWarning, event.ReasonUnhealthy, fmt.Sprintf("pod %s not ready", reconciled.Name))
+			}
 			status.Status.Conditions = hackathonv1.UpdateExperimentConditions(
 				status.Status.Conditions, hackathonv1.NewExperimentCondition(
-					hackathonv1.ExperimentPodReady, hackathonv1.ExperimentConditionTrue, "", ""))
+					hackathonv1.ExperimentPodReady, hackathonv1.ExperimentConditionFalse, "PodNotReady", ""))
 		}
 		return reconcile.Result{}, nil
 	})
