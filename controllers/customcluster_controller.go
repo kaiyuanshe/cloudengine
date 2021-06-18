@@ -59,8 +59,8 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 
-	if cluster == nil {
-		eventbus.Publish(eventbus.CustomClusterDeletedTopic, cluster)
+	if cluster == nil || r.isMarkedForDeletion(cluster) {
+		eventbus.Publish(eventbus.CustomClusterDeletedTopic, req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
@@ -97,11 +97,6 @@ func (r *CustomClusterReconciler) ReconcileCompatibility(cluster *hackathonv1.Cu
 
 func (r *CustomClusterReconciler) internalReconcile(ctx context.Context, cluster *hackathonv1.CustomCluster, status *customcluster.Status) *results.Results {
 	result := results.NewResults(ctx)
-
-	if r.isMarkedForDeletion(cluster) {
-		eventbus.Publish(eventbus.CustomClusterDeletedTopic, cluster)
-		return result
-	}
 
 	warnings := cluster.CheckForWarning()
 	if warnings != nil {

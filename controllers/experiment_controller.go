@@ -59,7 +59,7 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	// expr deleted
 	if expr == nil || !expr.DeletionTimestamp.IsZero() {
-		eventbus.Publish(eventbus.ExperimentDeletedTopic, expr)
+		eventbus.Publish(eventbus.ExperimentDeletedTopic, req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
