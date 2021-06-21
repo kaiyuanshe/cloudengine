@@ -95,6 +95,13 @@ var _ = BeforeSuite(func(done Done) {
 		Scheme:   k8sManager.GetScheme(),
 	}).SetupWithManager(k8sManager)).Should(Succeed())
 
+	Expect((&ExperimentReconciler{
+		Client:   k8sClient,
+		Recorder: k8sManager.GetEventRecorderFor("experiment-controller"),
+		Log:      ctrl.Log.WithName("controllers").WithName("ExperimentReconciler"),
+		Scheme:   k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)).Should(Succeed())
+
 	waitStart := make(chan struct{})
 	go func() {
 		close(waitStart)

@@ -139,11 +139,12 @@ func buildExpectedDataVolume(experiment *hackathonv1.Experiment) *corev1.Persist
 			Capacity: map[corev1.ResourceName]resource.Quantity{
 				corev1.ResourceStorage: resource.MustParse(fmt.Sprintf("%dGi", volumeSizeGi)),
 			},
-			PersistentVolumeSource: corev1.PersistentVolumeSource{Local: &corev1.LocalVolumeSource{
-				Path: fmt.Sprintf("%s/%s", hostPathDir, experiment.UID),
-			}},
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: fmt.Sprintf("%s/%s", hostPathDir, experiment.UID),
+				}},
 			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimDelete,
+			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimRetain,
 			StorageClassName:              DataVolumeStorageClass,
 			ClaimRef:                      &corev1.ObjectReference{Namespace: experiment.Namespace, Name: dataVolumeClaimName(experiment)},
 		},

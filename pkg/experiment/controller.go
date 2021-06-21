@@ -41,6 +41,7 @@ func (c *Controller) Reconcile(ctx context.Context, status *Status) *results.Res
 		client:        c.Client,
 		status:        status,
 		resourceState: resourceState,
+		logger:        c.Logger.WithName("DataVolume"),
 	}).Reconcile(ctx))
 
 	podResult := c.reconcileExperimentPods(ctx, status, resourceState)
@@ -50,6 +51,7 @@ func (c *Controller) Reconcile(ctx context.Context, status *Status) *results.Res
 
 func (c *Controller) firstInitExperiment(ctx context.Context, status *Status) *results.Results {
 	result := results.NewResults(ctx)
+	status.Status.Status = hackathonv1.ExperimentCreated
 	status.Status.Conditions = hackathonv1.UpdateExperimentConditions(
 		status.Status.Conditions,
 		hackathonv1.NewExperimentCondition(hackathonv1.ExperimentInitialized, hackathonv1.ExperimentConditionTrue, "", ""))
@@ -83,12 +85,12 @@ func (c *Controller) reconcileExperimentPods(ctx context.Context, status *Status
 
 	expected, err := buildExpectedEnvPod(status.Experiment, resState.Template)
 	if err != nil {
+		c.Logger.Error(err, "build expect env pod failed")
 		return result.WithError(err)
 	}
 
 	if len(resState.EnvPod) == 0 {
 		status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "create env pod")
-		status.Status.Status = hackathonv1.ExperimentCreated
 		return result.WithError(c.Client.Create(ctx, expected))
 	}
 
@@ -156,10 +158,9 @@ func buildExpectedEnvPod(experiment *hackathonv1.Experiment, template *hackathon
 		},
 	}
 
-	metaObj := pod.GetObjectMeta()
-	err := controllerutil.SetControllerReference(experiment, metaObj, scheme.Scheme)
+	err := controllerutil.SetControllerReference(experiment, pod.GetObjectMeta(), scheme.Scheme)
 	if err != nil {
-		return nil, fmt.Errorf("set ref failed: %s", err.Error())
+		return nil, fmt.Errorf("set pod owner ref failed: %s", err.Error())
 	}
 
 	return pod, nil

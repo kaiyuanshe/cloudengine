@@ -12,8 +12,9 @@ type Status struct {
 	Status     *hackathonv1.ExperimentStatus
 }
 
-// TODO
 func (s *Status) UpdateExperimentStatus(state *ResourceState) {
+	s.Status.Cluster = s.Experiment.Spec.ClusterName
+	s.Status.ClusterSync = false
 }
 
 func (s *Status) Apply() ([]event.Event, *hackathonv1.Experiment) {

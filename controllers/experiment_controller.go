@@ -22,6 +22,7 @@ import (
 	"cloudengine/pkg/experiment"
 	"cloudengine/pkg/utils/logtool"
 	"context"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -44,6 +45,7 @@ type ExperimentReconciler struct {
 
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;delete
 
 func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -82,8 +84,10 @@ func (r *ExperimentReconciler) fetchExperiment(ctx context.Context, name types.N
 }
 
 func (r *ExperimentReconciler) updateStatus(ctx context.Context, status *experiment.Status) error {
+	log := r.Log.WithValues("name", status.Experiment.Name, "namespace", status.Experiment.Namespace)
 	events, crt := status.Apply()
 	if crt == nil {
+		log.Info("not need update status")
 		return nil
 	}
 
@@ -91,15 +95,13 @@ func (r *ExperimentReconciler) updateStatus(ctx context.Context, status *experim
 		r.Recorder.Event(crt, evt.EventType, evt.Reason, evt.Message)
 	}
 
-	r.Log.Info("update experiment status",
-		"namespace", crt.Namespace,
-		"name", crt.Name,
-	)
+	log.Info("update experiment status")
 	return r.Client.Status().Update(ctx, crt)
 }
 
 func (r *ExperimentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hackathonv1.Experiment{}).
+		Owns(&corev1.Pod{}).
 		Complete(r)
 }

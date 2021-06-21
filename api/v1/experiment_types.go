@@ -65,6 +65,7 @@ type ExperimentCondition struct {
 // ExperimentStatus defines the observed state of Experiment
 type ExperimentStatus struct {
 	Status      ExperimentEnvStatus   `json:"status"`
+	Cluster     string                `json:"cluster"`
 	ClusterSync bool                  `json:"clusterSync"`
 	Conditions  []ExperimentCondition `json:"conditions"`
 }
