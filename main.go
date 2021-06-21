@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"cloudengine/pkg/customcluster"
 	"flag"
 	"os"
 
@@ -50,6 +51,8 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&customcluster.ControllerMode, "enable-controller", false, "")
+	flag.BoolVar(&customcluster.AgentMode, "enable-agent", false, "")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -66,12 +69,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CustomClusterReconciler{
-		Client:   mgr.GetClient(),
-		Recorder: mgr.GetEventRecorderFor("cluster-controller"),
-		Log:      ctrl.Log.WithName("controllers").WithName("CustomCluster"),
-		Scheme:   mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = controllers.NewCustomClusterController(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CustomCluster")
 		os.Exit(1)
 	}

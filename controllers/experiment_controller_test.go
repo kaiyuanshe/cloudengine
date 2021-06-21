@@ -32,26 +32,12 @@ var _ = Describe("test-experiment-reconcile", func() {
 				},
 			},
 		}
-
-		cluster = &hackathonv1.CustomCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-cluster-for-exper",
-				Namespace: "default",
-			},
-			Spec: hackathonv1.CustomClusterSpec{
-				ClusterTimeoutSeconds: 3600,
-				PublishIps:            []string{},
-				PrivateIps:            []string{},
-				EnablePrivateIP:       false,
-			},
-		}
 	)
 
 	BeforeEach(func() {
 		By("init cluster and template")
 		time.Sleep(5 * time.Millisecond)
 		Expect(k8sClient.Create(context.TODO(), tpl)).ToNot(HaveOccurred())
-		Expect(k8sClient.Create(context.TODO(), cluster)).ToNot(HaveOccurred())
 		expr = &hackathonv1.Experiment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-expr",
@@ -60,7 +46,7 @@ var _ = Describe("test-experiment-reconcile", func() {
 			Spec: hackathonv1.ExperimentSpec{
 				Pause:       false,
 				Template:    tpl.Name,
-				ClusterName: cluster.Name,
+				ClusterName: k8stools.MetaClusterName,
 			},
 		}
 	})
@@ -95,7 +81,6 @@ var _ = Describe("test-experiment-reconcile", func() {
 	AfterEach(func() {
 		_ = k8sClient.Delete(context.TODO(), expr)
 		_ = k8sClient.Delete(context.TODO(), tpl)
-		_ = k8sClient.Delete(context.TODO(), cluster)
 
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{

@@ -4,6 +4,7 @@ import (
 	hackathonv1 "cloudengine/api/v1"
 	"cloudengine/pkg/common/event"
 	"cloudengine/pkg/common/results"
+	"cloudengine/pkg/utils/k8stools"
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
@@ -38,8 +39,12 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 		return results.NewResults(ctx)
 	}
 
-	status.Status.Status = hackathonv1.ClusterUnknown
+	if r := d.reconcileMetaCluster(ctx, status); r != nil {
+		d.Log.Info("handle meta cluster")
+		return r
+	}
 
+	status.Status.Status = hackathonv1.ClusterUnknown
 	hbCond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterHeartbeat)
 	if hbCond == nil || hbCond.Status == hackathonv1.ClusterStatusFalse {
 		status.Status.Status = hackathonv1.ClusterLost
@@ -86,5 +91,32 @@ func (d *Driver) InitCustomCluster(ctx context.Context, status *Status) *results
 		status.Status.Conditions = hackathonv1.UpdateClusterConditions(status.Status.Conditions, hackathonv1.NewClusterCondition(hackathonv1.ClusterInit, hackathonv1.ClusterStatusTrue, "", ""))
 		status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "wait for first heartbeat")
 		return reconcile.Result{Requeue: true}, nil
+	})
+}
+
+func (d *Driver) reconcileMetaCluster(ctx context.Context, status *Status) *results.Results {
+	metaObj := d.Cluster.GetObjectMeta()
+	labels := metaObj.GetLabels()
+	if labels == nil {
+		return nil
+	}
+	if _, ok := labels[k8stools.MetaClusterMark]; !ok {
+		return nil
+	}
+	status.Status.Status = hackathonv1.ClusterReady
+	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
+		status.Status.Conditions,
+		hackathonv1.NewClusterCondition(hackathonv1.ClusterFirstConnect, hackathonv1.ClusterStatusTrue, "Ready", "meta cluster ready"))
+	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
+		status.Status.Conditions,
+		hackathonv1.NewClusterCondition(hackathonv1.ClusterHeartbeat, hackathonv1.ClusterStatusTrue, "Ready", "meta cluster ready"))
+	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
+		status.Status.Conditions,
+		hackathonv1.NewClusterCondition(hackathonv1.ClusterResourceSync, hackathonv1.ClusterStatusTrue, "Ready", "meta cluster ready"))
+	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
+		status.Status.Conditions,
+		hackathonv1.NewClusterCondition(hackathonv1.ClusterCommandApply, hackathonv1.ClusterStatusTrue, "Ready", "meta cluster ready"))
+	return results.NewResults(ctx).With("update-meta-cluster", func() (reconcile.Result, error) {
+		return reconcile.Result{RequeueAfter: time.Duration(status.Cluster.Spec.ClusterTimeoutSeconds) * time.Second}, nil
 	})
 }

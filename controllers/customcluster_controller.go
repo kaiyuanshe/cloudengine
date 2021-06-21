@@ -144,3 +144,18 @@ func (r *CustomClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&hackathonv1.CustomCluster{}).
 		Complete(r)
 }
+
+func NewCustomClusterController(mgr ctrl.Manager) error {
+	var (
+		cli    = mgr.GetClient()
+		logger = ctrl.Log.WithName("controllers").WithName("CustomCluster")
+	)
+	err := (&CustomClusterReconciler{
+		Client:   cli,
+		Recorder: mgr.GetEventRecorderFor("cluster-controller"),
+		Log:      logger,
+		Scheme:   mgr.GetScheme(),
+	}).SetupWithManager(mgr)
+
+	return err
+}
