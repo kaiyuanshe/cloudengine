@@ -95,6 +95,7 @@ func (c *Controller) reconcileExperimentPods(ctx context.Context, status *Status
 	}
 
 	reconciled := resState.EnvPod[0]
+	c.Logger.Info("found event pod", "pod", reconciled.Name, "namespace", reconciled.Namespace, "status", reconciled.Status.Phase)
 	return result.With("check-env-pod", func() (reconcile.Result, error) {
 		if k8stools.IsPodReady(&reconciled) {
 			if status.Status.Status != hackathonv1.ExperimentRunning {

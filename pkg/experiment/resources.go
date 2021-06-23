@@ -72,9 +72,12 @@ func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *h
 
 	podList := &corev1.PodList{}
 	selector := labels.NewSelector()
-	requireExprName, _ := labels.NewRequirement(LabelKeyExperimentName, selection.Equals, []string{expr.Name})
-	selector.Add(*requireExprName)
-	err = k8sClient.List(ctx, podList, client.MatchingLabelsSelector{Selector: selector})
+	requireExprName, err := labels.NewRequirement(LabelKeyExperimentName, selection.Equals, []string{expr.Name})
+	if err != nil {
+		return nil, fmt.Errorf("build label selector failed: %s", err.Error())
+	}
+	selector = selector.Add(*requireExprName)
+	err = k8sClient.List(ctx, podList, client.InNamespace(expr.Namespace), client.MatchingLabelsSelector{Selector: selector})
 	if err != nil {
 		return nil, err
 	}

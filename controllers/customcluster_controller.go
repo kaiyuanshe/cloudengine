@@ -50,7 +50,7 @@ type CustomClusterReconciler struct {
 
 func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues("customcluster", req.NamespacedName)
-	defer logtool.SpendTimeRecord(logger, "reconcile custom cluster")
+	defer logtool.SpendTimeRecord(logger, "reconcile custom cluster")()
 
 	ctx := context.Background()
 	result := results.NewResults(ctx)
@@ -78,6 +78,7 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	err = r.updateStatus(ctx, status)
 	if err != nil {
 		logger.Error(err, "update cluster status failed")
+		return ctrl.Result{Requeue: true}, err
 	}
 	return result.WithError(err).WithResult(reconcileResult).Aggregate()
 }

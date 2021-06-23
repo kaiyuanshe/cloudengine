@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -27,7 +28,7 @@ var _ = Describe("test-experiment-reconcile", func() {
 			Data: hackathonv1.TemplateData{
 				Type: hackathonv1.PodTemplateType,
 				PodTemplate: &hackathonv1.PodTemplate{
-					Image:   "bosybox",
+					Image:   "busybox",
 					Command: []string{"sh", "-c", "sleep 100000000"},
 				},
 			},
@@ -56,11 +57,11 @@ var _ = Describe("test-experiment-reconcile", func() {
 			By("create new experiment cr")
 			Expect(k8sClient.Create(context.TODO(), expr)).ToNot(HaveOccurred())
 
-			timeout := 30
-			interval := 5
+			timeout := 60
+			interval := 3
 			created := &hackathonv1.Experiment{}
 			Eventually(func() hackathonv1.ExperimentEnvStatus {
-				Expect(k8sClient.Get(context.TODO(), client.ObjectKey{
+				Expect(k8sClient.Get(context.TODO(), types.NamespacedName{
 					Namespace: expr.Namespace,
 					Name:      expr.Name,
 				}, created)).ToNot(HaveOccurred())

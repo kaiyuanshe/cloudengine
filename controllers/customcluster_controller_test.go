@@ -78,6 +78,7 @@ var _ = Describe("test-custom-cluster-reconcile", func() {
 
 			It("need-be-lost", func() {
 				By("update cluster status: like send heartbeat")
+				Expect(k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: "default", Name: "test-cluster"}, created)).Should(Succeed())
 				created.Status.Status = hackathonv1.ClusterReady
 				created.Status.Conditions = append(created.Status.Conditions, hackathonv1.ClusterCondition{
 					Type:               hackathonv1.ClusterInit,
@@ -115,13 +116,13 @@ var _ = Describe("test-custom-cluster-reconcile", func() {
 					if err := k8sClient.Get(context.TODO(), types.NamespacedName{
 						Namespace: "default",
 						Name:      "test-cluster",
-					}, created); err != nil {
+					}, latest); err != nil {
 						return ""
 					}
-					return created.Status.Status
+					return latest.Status.Status
 				}, timeout, interval).Should(Equal(hackathonv1.ClusterLost))
 
-				Expect(hackathonv1.CheckClusterCondition(created.Status.Conditions, hackathonv1.ClusterHeartbeat, hackathonv1.ClusterStatusFalse)).Should(BeTrue())
+				Expect(hackathonv1.CheckClusterCondition(latest.Status.Conditions, hackathonv1.ClusterHeartbeat, hackathonv1.ClusterStatusFalse)).Should(BeTrue())
 			})
 		})
 

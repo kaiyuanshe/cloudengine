@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -14,7 +15,7 @@ import (
 
 func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
 	logger := config.Logger
-	defer logtool.SpendTimeRecord(logger, "reconcile resource")
+	defer logtool.SpendTimeRecord(logger, "reconcile resource")()
 	if err := validate(config); err != nil {
 		logger.Error(err, "config invalid")
 		return fmt.Errorf("config invalid")
@@ -53,18 +54,18 @@ func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
 	}
 
 	defer func() {
-		_ = config.Client.Get(ctx, client.ObjectKey{
+		_ = config.Client.Get(ctx, types.NamespacedName{
 			Namespace: metaObj.GetNamespace(),
 			Name:      metaObj.GetName(),
 		}, config.Reconciled)
 	}()
 
-	if err = config.Client.Get(ctx, client.ObjectKey{
+	if err = config.Client.Get(ctx, types.NamespacedName{
 		Namespace: metaObj.GetNamespace(),
 		Name:      metaObj.GetName(),
 	}, config.Reconciled); err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("resource not found, do create")
+			logger.Info("resource not found, do create", "query", types.NamespacedName{Namespace: metaObj.GetNamespace(), Name: metaObj.GetName()}.String())
 			return create(ctx, config)
 		}
 		logger.Error(err, "query resource failed")
@@ -133,7 +134,12 @@ func create(ctx context.Context, config *ResourceConfig) error {
 		}
 	}
 
-	return config.Client.Create(ctx, config.Expected)
+	err := config.Client.Create(ctx, config.Expected)
+	if err != nil {
+		config.Logger.Error(err, "create resource failed")
+		return err
+	}
+	return nil
 }
 
 func validate(config *ResourceConfig) error {

@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,22 +53,13 @@ func (v *DataVolume) reconcileVolume(ctx context.Context) *results.Results {
 		Expected:   expected,
 		Reconciled: reconciled,
 		NeedUpdate: func() bool {
-			return !reflect.DeepEqual(expected.Spec.PersistentVolumeSource, reconciled.Spec.PersistentVolumeSource)
+			return false
 		},
 		NeedRecreate: func() bool {
 			return false
 		},
 		PreCreateHook: func() error {
 			v.status.AddEvent(corev1.EventTypeNormal, event.ReasonCreated, "create data volume")
-			return nil
-		},
-		PreUpdateHook: func() error {
-			reconciled.Spec.StorageClassName = expected.Spec.StorageClassName
-			reconciled.Spec.PersistentVolumeSource = expected.Spec.PersistentVolumeSource
-			return nil
-		},
-		PostUpdateHook: func() error {
-			v.status.AddEvent(corev1.EventTypeNormal, event.ReasonUpdated, "update data volume config")
 			return nil
 		},
 		Logger: v.logger.WithValues("pv", pvName),
@@ -128,6 +118,7 @@ func dataVolumeClaimName(experiment *hackathonv1.Experiment) string {
 }
 
 func buildExpectedDataVolume(experiment *hackathonv1.Experiment) *corev1.PersistentVolume {
+	hostType := corev1.HostPathDirectoryOrCreate
 	return &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: experiment.Namespace,
@@ -144,6 +135,7 @@ func buildExpectedDataVolume(experiment *hackathonv1.Experiment) *corev1.Persist
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: fmt.Sprintf("%s/%s", hostPathDir, experiment.UID),
+					Type: &hostType,
 				}},
 			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimRetain,

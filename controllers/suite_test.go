@@ -20,6 +20,7 @@ import (
 	"cloudengine/pkg/utils/k8stools"
 	"context"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -89,8 +90,10 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sManager).ToNot(BeNil())
 
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
+	// Do NOT use manger client in test, manager client has cache
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/343
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).Should(BeNil())
 
 	Expect(NewCustomClusterController(k8sManager)).Should(Succeed())
 
@@ -112,7 +115,7 @@ var _ = BeforeSuite(func(done Done) {
 	go func() {
 		defer group.Done()
 		metaCluster := &hackathonv1.CustomCluster{}
-		if err = k8sClient.Get(context.Background(), client.ObjectKey{
+		if err = k8sClient.Get(context.Background(), types.NamespacedName{
 			Namespace: k8stools.MetaClusterNameSpace,
 			Name:      k8stools.MetaClusterName,
 		}, metaCluster); err != nil {

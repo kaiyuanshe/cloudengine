@@ -51,7 +51,7 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	ctx := context.Background()
 	logger := r.Log.WithValues("experiment", req.NamespacedName)
 	result := results.NewResults(ctx)
-	defer logtool.SpendTimeRecord(logger, "reconcile experiment")
+	defer logtool.SpendTimeRecord(logger, "reconcile experiment")()
 
 	expr, err := r.fetchExperiment(ctx, req.NamespacedName)
 	if err != nil {
