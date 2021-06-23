@@ -5,6 +5,7 @@ import (
 	"cloudengine/pkg/common/event"
 	"cloudengine/pkg/common/reconciler"
 	"cloudengine/pkg/common/results"
+	"cloudengine/pkg/utils/logtool"
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
@@ -35,10 +36,10 @@ func (v *DataVolume) Reconcile(ctx context.Context) *results.Results {
 }
 
 func (v *DataVolume) reconcileVolume(ctx context.Context) *results.Results {
+	defer logtool.SpendTimeRecord(v.logger, "reconcile volume claim")()
 	result := results.NewResults(ctx)
 	var (
-		namespace = v.status.Experiment.Namespace
-		pvName    = dataVolumeName(v.status.Experiment)
+		pvName = dataVolumeName(v.status.Experiment)
 	)
 
 	expected := buildExpectedDataVolume(v.status.Experiment)
@@ -71,19 +72,20 @@ func (v *DataVolume) reconcileVolume(ctx context.Context) *results.Results {
 			v.status.AddEvent(corev1.EventTypeNormal, event.ReasonUpdated, "update data volume config")
 			return nil
 		},
-		Logger: v.logger.WithValues("type", "datavolume", "namespace", namespace, "name", pvName),
+		Logger: v.logger.WithValues("pv", pvName),
 	}
 
 	return result.WithError(reconciler.ReconcileResource(ctx, config))
 }
 
 func (v *DataVolume) reconcileVolumeClaim(ctx context.Context) *results.Results {
+	defer logtool.SpendTimeRecord(v.logger, "reconcile data volume")()
 	result := results.NewResults(ctx)
 	var (
-		namespace = v.status.Experiment.Namespace
-		pvcName   = dataVolumeClaimName(v.status.Experiment)
+		pvcName = dataVolumeClaimName(v.status.Experiment)
 	)
 	expected := buildExpectedDataVolumeClaim(v.status.Experiment)
+	v.logger.Info("build expected pvc", "pvc", pvcName)
 	reconciled := v.resourceState.DataVolumeClaim
 	if reconciled == nil {
 		reconciled = expected
@@ -111,7 +113,7 @@ func (v *DataVolume) reconcileVolumeClaim(ctx context.Context) *results.Results 
 			v.status.AddEvent(corev1.EventTypeNormal, event.ReasonUpdated, "update data volume claim")
 			return nil
 		},
-		Logger: v.logger.WithValues("type", "datavolumeclaim", "namespace", namespace, "name", pvcName),
+		Logger: v.logger.WithValues("pvc", pvcName),
 	}
 
 	return result.WithError(reconciler.ReconcileResource(ctx, config))

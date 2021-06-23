@@ -61,6 +61,7 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	// expr deleted
 	if expr == nil || !expr.DeletionTimestamp.IsZero() {
+		logger.Info("experiment has deleted, publish topic")
 		eventbus.Publish(eventbus.ExperimentDeletedTopic, req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -68,9 +69,12 @@ func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	status := experiment.NewStatus(expr)
 	result.WithResult((&experiment.Controller{
 		Client: r.Client,
-		Logger: logger,
+		Logger: logger.WithName("ExperimentController"),
 	}).Reconcile(ctx, status))
 	err = r.updateStatus(ctx, status)
+	if err != nil {
+		logger.Error(err, "update experiment status failed")
+	}
 	return result.WithError(err).Aggregate()
 }
 

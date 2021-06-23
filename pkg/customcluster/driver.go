@@ -24,6 +24,11 @@ type Driver struct {
 }
 
 func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results {
+	if r := d.reconcileMetaCluster(ctx, status); r != nil {
+		d.Log.Info("handle meta cluster")
+		return r
+	}
+
 	if !hackathonv1.CheckClusterCondition(
 		d.Cluster.Status.Conditions,
 		hackathonv1.ClusterInit,
@@ -36,18 +41,15 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 		d.Cluster.Status.Conditions,
 		hackathonv1.ClusterFirstConnect,
 		hackathonv1.ClusterStatusFalse) {
+		d.Log.Info("wait first connect")
 		return results.NewResults(ctx)
-	}
-
-	if r := d.reconcileMetaCluster(ctx, status); r != nil {
-		d.Log.Info("handle meta cluster")
-		return r
 	}
 
 	status.Status.Status = hackathonv1.ClusterUnknown
 	hbCond := hackathonv1.QueryClusterCondition(d.Cluster.Status.Conditions, hackathonv1.ClusterHeartbeat)
 	if hbCond == nil || hbCond.Status == hackathonv1.ClusterStatusFalse {
 		status.Status.Status = hackathonv1.ClusterLost
+		d.Log.Info("cluster lost")
 		return results.NewResults(ctx)
 	}
 
@@ -62,6 +64,7 @@ func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results
 		status.Status.Conditions = hackathonv1.UpdateClusterConditions(
 			status.Status.Conditions,
 			hackathonv1.NewClusterCondition(hackathonv1.ClusterHeartbeat, hackathonv1.ClusterStatusFalse, event.ReasonUnhealthy, "time out"))
+		d.Log.Info("cluster heartbeat timeout")
 		return results.NewResults(ctx)
 	}
 
@@ -104,6 +107,9 @@ func (d *Driver) reconcileMetaCluster(ctx context.Context, status *Status) *resu
 		return nil
 	}
 	status.Status.Status = hackathonv1.ClusterReady
+	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
+		status.Status.Conditions,
+		hackathonv1.NewClusterCondition(hackathonv1.ClusterInit, hackathonv1.ClusterStatusTrue, "Ready", "meta cluster ready"))
 	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
 		status.Status.Conditions,
 		hackathonv1.NewClusterCondition(hackathonv1.ClusterFirstConnect, hackathonv1.ClusterStatusTrue, "Ready", "meta cluster ready"))

@@ -76,6 +76,9 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	status := customcluster.NewStatus(cluster)
 	reconcileResult := r.internalReconcile(ctx, cluster, status)
 	err = r.updateStatus(ctx, status)
+	if err != nil {
+		logger.Error(err, "update cluster status failed")
+	}
 	return result.WithError(err).WithResult(reconcileResult).Aggregate()
 }
 
@@ -96,11 +99,12 @@ func (r *CustomClusterReconciler) ReconcileCompatibility(cluster *hackathonv1.Cu
 }
 
 func (r *CustomClusterReconciler) internalReconcile(ctx context.Context, cluster *hackathonv1.CustomCluster, status *customcluster.Status) *results.Results {
+	logger := r.Log.WithValues("customcluster", cluster.Name, "namespace", cluster.Namespace)
 	result := results.NewResults(ctx)
 
 	warnings := cluster.CheckForWarning()
 	if warnings != nil {
-		r.Log.Info("cluster validation has warning",
+		logger.Info("cluster validation has warning",
 			"namespace", cluster.Namespace,
 			"name", cluster.Name,
 			"warning", warnings.Error(),
@@ -112,7 +116,7 @@ func (r *CustomClusterReconciler) internalReconcile(ctx context.Context, cluster
 		Client:   r.Client,
 		Cluster:  cluster,
 		Recorder: r.Recorder,
-		Log:      r.Log.WithName("ClusterDriver"),
+		Log:      logger.WithName("ClusterDriver"),
 	}
 	reconcileResult := driver.Reconcile(ctx, status)
 	return result.WithResult(reconcileResult)

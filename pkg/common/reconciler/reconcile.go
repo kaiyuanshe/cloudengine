@@ -1,6 +1,7 @@
 package reconciler
 
 import (
+	"cloudengine/pkg/utils/logtool"
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -12,15 +13,20 @@ import (
 )
 
 func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
+	logger := config.Logger
+	defer logtool.SpendTimeRecord(logger, "reconcile resource")
 	if err := validate(config); err != nil {
+		logger.Error(err, "config invalid")
 		return fmt.Errorf("config invalid")
 	}
 	metaObj, err := meta.Accessor(config.Expected)
 	if err != nil {
+		logger.Error(err, "build meta accessor failed")
 		return err
 	}
 	gvk, err := apiutil.GVKForObject(config.Expected, scheme.Scheme)
 	if err != nil {
+		logger.Error(err, "get resource GVK failed")
 		return err
 	}
 	kind := gvk.Kind
@@ -32,17 +38,16 @@ func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
 	if config.NeedUpdate != nil {
 		needUpdate = config.NeedUpdate()
 	}
-	config.Logger.Info("do reconcile action",
+	logger.Info("do reconcile action",
 		"needRecreate", needRecreate,
 		"needUpdate", needUpdate,
 		"kind", kind,
-		"name", metaObj.GetName(),
-		"namespace", metaObj.GetNamespace(),
 	)
 
 	if config.Owner != nil {
 		config.Logger.Info("set owner ref")
 		if err = controllerutil.SetControllerReference(config.Owner, metaObj, scheme.Scheme); err != nil {
+			logger.Error(err, "set owner reference failed")
 			return err
 		}
 	}
@@ -59,18 +64,20 @@ func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
 		Name:      metaObj.GetName(),
 	}, config.Reconciled); err != nil {
 		if errors.IsNotFound(err) {
+			logger.Info("resource not found, do create")
 			return create(ctx, config)
 		}
-		config.Logger.Error(err, "query resource failed")
+		logger.Error(err, "query resource failed")
 	}
 
 	rMetaObj, err := meta.Accessor(config.Reconciled)
 	if err != nil {
+		logger.Error(err, "build reconciled resource meta accessor failed")
 		return err
 	}
 
 	if needRecreate {
-		config.Logger.Info("need delete and recreate resource")
+		logger.Info("need delete and recreate resource")
 		rUid := rMetaObj.GetUID()
 		rVersion := rMetaObj.GetResourceVersion()
 		pcOpt := client.Preconditions{
@@ -79,7 +86,7 @@ func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
 		}
 		if err = config.Client.Delete(ctx, config.Reconciled, pcOpt); err != nil {
 			if !errors.IsNotFound(err) {
-				config.Logger.Error(err, "delete old resource failed")
+				logger.Error(err, "delete old resource failed")
 				return err
 			}
 		}
@@ -91,24 +98,24 @@ func ReconcileResource(ctx context.Context, config *ResourceConfig) error {
 	}
 
 	crtVersion := rMetaObj.GetResourceVersion()
-	config.Logger.Info("need update resource", "currentVersion", crtVersion)
+	logger.Info("need update resource", "currentVersion", crtVersion)
 
 	if config.PreUpdateHook != nil {
 		if err = config.PreUpdateHook(); err != nil {
-			config.Logger.Error(err, "pre update hook failed")
+			logger.Error(err, "do pre update hook failed")
 			return err
 		}
 	}
 
 	rMetaObj.SetResourceVersion(crtVersion)
 	if err = config.Client.Update(ctx, config.Reconciled); err != nil {
-		config.Logger.Error(err, "update reconciled resource failed")
+		logger.Error(err, "update reconciled resource failed")
 		return err
 	}
 
 	if config.PostUpdateHook != nil {
 		if err = config.PreUpdateHook(); err != nil {
-			config.Logger.Error(err, "post update hook failed")
+			logger.Error(err, "post update hook failed")
 			return err
 		}
 	}
