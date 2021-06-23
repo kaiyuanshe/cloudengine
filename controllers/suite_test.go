@@ -17,9 +17,14 @@ limitations under the License.
 package controllers
 
 import (
+	"cloudengine/pkg/utils/k8stools"
+	"context"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sync"
 	"testing"
 	"time"
 
@@ -85,23 +90,43 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sManager).ToNot(BeNil())
 
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
+	// Do NOT use manger client in test, manager client has cache
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/343
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).Should(BeNil())
 
-	Expect((&CustomClusterReconciler{
+	Expect(NewCustomClusterController(k8sManager)).Should(Succeed())
+
+	Expect((&ExperimentReconciler{
 		Client:   k8sClient,
-		Recorder: k8sManager.GetEventRecorderFor("cluster-controller"),
-		Log:      ctrl.Log.WithName("controllers").WithName("CustomCluster"),
+		Recorder: k8sManager.GetEventRecorderFor("experiment-controller"),
+		Log:      ctrl.Log.WithName("controllers").WithName("ExperimentReconciler"),
 		Scheme:   k8sManager.GetScheme(),
 	}).SetupWithManager(k8sManager)).Should(Succeed())
 
-	waitStart := make(chan struct{})
+	group := sync.WaitGroup{}
+	group.Add(2)
 	go func() {
-		close(waitStart)
+		defer group.Done()
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred())
 	}()
-	<-waitStart
+
+	go func() {
+		defer group.Done()
+		metaCluster := &hackathonv1.CustomCluster{}
+		if err = k8sClient.Get(context.Background(), types.NamespacedName{
+			Namespace: k8stools.MetaClusterNameSpace,
+			Name:      k8stools.MetaClusterName,
+		}, metaCluster); err != nil {
+			if errors.IsNotFound(err) {
+				if err = k8sClient.Create(context.Background(), k8stools.NewMetaCluster()); err != nil {
+					panic(err)
+				}
+			}
+		}
+	}()
+	group.Done()
 	close(done)
 }, 600)
 

@@ -26,9 +26,15 @@ const (
 	PodTemplateType TemplateType = "Pod"
 )
 
-// TemplateSpec defines the desired state of Template
-type TemplateSpec struct {
-	Type TemplateType `json:"type"`
+type PodTemplate struct {
+	Image   string   `json:"image"`
+	Command []string `json:"command,omitempty"`
+}
+
+// TemplateData defines the desired state of Template
+type TemplateData struct {
+	Type        TemplateType `json:"type"`
+	PodTemplate *PodTemplate `json:"podTemplate"`
 }
 
 // +kubebuilder:object:root=true
@@ -38,7 +44,7 @@ type Template struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec TemplateSpec `json:"spec,omitempty"`
+	Data TemplateData `json:"data,omitempty"`
 }
 
 // +kubebuilder:object:root=true

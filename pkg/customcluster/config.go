@@ -7,6 +7,7 @@ var (
 	AgentToken     string
 	ClusterID      string
 	ControllerMode bool
+	AgentMode      bool
 )
 
 /*

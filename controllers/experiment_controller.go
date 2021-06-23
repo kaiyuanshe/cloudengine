@@ -17,7 +17,15 @@ limitations under the License.
 package controllers
 
 import (
+	"cloudengine/pkg/common/results"
+	"cloudengine/pkg/eventbus"
+	"cloudengine/pkg/experiment"
+	"cloudengine/pkg/utils/logtool"
 	"context"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,24 +38,74 @@ import (
 // ExperimentReconciler reconciles a Experiment object
 type ExperimentReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Recorder record.EventRecorder
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;delete
 
 func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("experiment", req.NamespacedName)
+	ctx := context.Background()
+	logger := r.Log.WithValues("experiment", req.NamespacedName)
+	result := results.NewResults(ctx)
+	defer logtool.SpendTimeRecord(logger, "reconcile experiment")()
 
-	// your logic here
+	expr, err := r.fetchExperiment(ctx, req.NamespacedName)
+	if err != nil {
+		logger.Error(err, "fetch experiment failed")
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	// expr deleted
+	if expr == nil || !expr.DeletionTimestamp.IsZero() {
+		logger.Info("experiment has deleted, publish topic")
+		eventbus.Publish(eventbus.ExperimentDeletedTopic, req.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
+	status := experiment.NewStatus(expr)
+	result.WithResult((&experiment.Controller{
+		Client: r.Client,
+		Logger: logger.WithName("ExperimentController"),
+	}).Reconcile(ctx, status))
+	err = r.updateStatus(ctx, status)
+	if err != nil {
+		logger.Error(err, "update experiment status failed")
+	}
+	return result.WithError(err).Aggregate()
+}
+
+func (r *ExperimentReconciler) fetchExperiment(ctx context.Context, name types.NamespacedName) (*hackathonv1.Experiment, error) {
+	expr := &hackathonv1.Experiment{}
+	err := r.Client.Get(ctx, name, expr)
+	if errors.IsNotFound(err) {
+		return nil, nil
+	}
+	return expr, err
+}
+
+func (r *ExperimentReconciler) updateStatus(ctx context.Context, status *experiment.Status) error {
+	log := r.Log.WithValues("name", status.Experiment.Name, "namespace", status.Experiment.Namespace)
+	events, crt := status.Apply()
+	if crt == nil {
+		log.Info("not need update status")
+		return nil
+	}
+
+	for _, evt := range events {
+		r.Recorder.Event(crt, evt.EventType, evt.Reason, evt.Message)
+	}
+
+	log.Info("update experiment status")
+	return r.Client.Status().Update(ctx, crt)
 }
 
 func (r *ExperimentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hackathonv1.Experiment{}).
+		Owns(&corev1.Pod{}).
 		Complete(r)
 }

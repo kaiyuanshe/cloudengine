@@ -22,8 +22,9 @@ import (
 
 // ExperimentSpec defines the desired state of Experiment
 type ExperimentSpec struct {
-	Template          string  `json:"template"`
-	CustomClusterName *string `json:"customClusterName"`
+	Pause       bool   `json:"pause"`
+	Template    string `json:"template"`
+	ClusterName string `json:"clusterName"`
 }
 
 type ExperimentEnvStatus string
@@ -31,35 +32,88 @@ type ExperimentEnvStatus string
 const (
 	ExperimentCreated ExperimentEnvStatus = "Created"
 	ExperimentRunning ExperimentEnvStatus = "Running"
-	ExperimentStop    ExperimentEnvStatus = "Stop"
+	ExperimentStopped ExperimentEnvStatus = "Stopped"
+	ExperimentError   ExperimentEnvStatus = "Error"
 )
 
-type ConditionStatus string
+type ExperimentConditionStatus string
 
 const (
-	ConditionTrue    ConditionStatus = "True"
-	ConditionFalse   ConditionStatus = "False"
-	ConditionUnknown ConditionStatus = "Unknown"
+	ExperimentConditionTrue    ExperimentConditionStatus = "True"
+	ExperimentConditionFalse   ExperimentConditionStatus = "False"
+	ExperimentConditionUnknown ExperimentConditionStatus = "Unknown"
 )
 
 type ExperimentConditionType string
 
 const (
-	PodInitialized ExperimentConditionType = "Initialized"
-	PodReady       ExperimentConditionType = "Ready"
+	ExperimentInitialized   ExperimentConditionType = "Initialized"
+	ExperimentPodReady      ExperimentConditionType = "PodReady"
+	ExperimentVolumeCreated ExperimentConditionType = "VolumeCreated"
+	ExperimentReady         ExperimentConditionType = "Ready"
 )
 
-type Condition struct {
-	Type    ExperimentConditionType `json:"type"`
-	Status  ConditionStatus         `json:"status"`
-	Reason  string                  `json:"reason"`
-	Message string                  `json:"message"`
+type ExperimentCondition struct {
+	Type               ExperimentConditionType   `json:"type"`
+	Status             ExperimentConditionStatus `json:"status"`
+	Reason             string                    `json:"reason"`
+	Message            string                    `json:"message"`
+	LastProbeTime      metav1.Time               `json:"lastProbeTime"`
+	LastTransitionTime metav1.Time               `json:"lastTransitionTime"`
 }
 
 // ExperimentStatus defines the observed state of Experiment
 type ExperimentStatus struct {
-	Status     ExperimentEnvStatus `json:"status"`
-	Conditions []Condition         `json:"conditions"`
+	Status      ExperimentEnvStatus   `json:"status"`
+	Cluster     string                `json:"cluster"`
+	ClusterSync bool                  `json:"clusterSync"`
+	Conditions  []ExperimentCondition `json:"conditions"`
+}
+
+func NewExperimentCondition(conditionType ExperimentConditionType, status ExperimentConditionStatus, reason, message string) ExperimentCondition {
+	return ExperimentCondition{
+		Type:               conditionType,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		LastProbeTime:      metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+	}
+}
+
+func QueryExperimentCondition(conditions []ExperimentCondition, conditionType ExperimentConditionType) *ExperimentCondition {
+	for i := range conditions {
+		if conditions[i].Type == conditionType {
+			condition := conditions[i]
+			return &condition
+		}
+	}
+	return nil
+}
+
+func CheckExperimentCondition(conditions []ExperimentCondition, conditionType ExperimentConditionType, status ExperimentConditionStatus) bool {
+	cond := QueryExperimentCondition(conditions, conditionType)
+	if cond == nil {
+		if status == ExperimentConditionTrue {
+			return false
+		}
+		return true
+	}
+	return cond.Status == status
+}
+
+func UpdateExperimentConditions(conditions []ExperimentCondition, condition ExperimentCondition) []ExperimentCondition {
+	isFound := false
+	for i := range conditions {
+		if conditions[i].Type == condition.Type {
+			isFound = true
+			conditions[i] = condition
+		}
+	}
+	if !isFound {
+		conditions = append(conditions, condition)
+	}
+	return conditions
 }
 
 // +kubebuilder:object:root=true

@@ -15,8 +15,8 @@ type Results struct {
 }
 
 func (r *Results) With(name string, fn func() (reconcile.Result, error)) *Results {
-	log := ctrl.Log.WithName(name)
-	log.Info("run step")
+	log := ctrl.Log.WithName("Results")
+	log.Info("run step", "step", name)
 
 	result, err := fn()
 	if err != nil {

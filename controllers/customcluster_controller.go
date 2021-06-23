@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -49,13 +50,18 @@ type CustomClusterReconciler struct {
 
 func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues("customcluster", req.NamespacedName)
-	defer logtool.SpendTimeRecord(logger, "reconcile custom cluster")
+	defer logtool.SpendTimeRecord(logger, "reconcile custom cluster")()
 
 	ctx := context.Background()
 	result := results.NewResults(ctx)
 	cluster, err := r.fetchCustomCluster(ctx, req.NamespacedName)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	if cluster == nil || r.isMarkedForDeletion(cluster) {
+		eventbus.Publish(eventbus.CustomClusterDeletedTopic, req.NamespacedName)
+		return ctrl.Result{}, nil
 	}
 
 	if !r.ReconcileCompatibility(cluster) {
@@ -70,12 +76,19 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	status := customcluster.NewStatus(cluster)
 	reconcileResult := r.internalReconcile(ctx, cluster, status)
 	err = r.updateStatus(ctx, status)
+	if err != nil {
+		logger.Error(err, "update cluster status failed")
+		return ctrl.Result{Requeue: true}, err
+	}
 	return result.WithError(err).WithResult(reconcileResult).Aggregate()
 }
 
 func (r *CustomClusterReconciler) fetchCustomCluster(ctx context.Context, name types.NamespacedName) (*hackathonv1.CustomCluster, error) {
 	cluster := &hackathonv1.CustomCluster{}
 	if err := r.Get(ctx, name, cluster); err != nil {
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
 		r.Log.Error(err, "get custom cluster cr failed", "namespace", name.Namespace, "name", name.Name)
 		return nil, err
 	}
@@ -87,16 +100,12 @@ func (r *CustomClusterReconciler) ReconcileCompatibility(cluster *hackathonv1.Cu
 }
 
 func (r *CustomClusterReconciler) internalReconcile(ctx context.Context, cluster *hackathonv1.CustomCluster, status *customcluster.Status) *results.Results {
+	logger := r.Log.WithValues("customcluster", cluster.Name, "namespace", cluster.Namespace)
 	result := results.NewResults(ctx)
-
-	if r.isMarkedForDeletion(cluster) {
-		eventbus.Publish(eventbus.CustomClusterDeletedTopic, cluster)
-		return result
-	}
 
 	warnings := cluster.CheckForWarning()
 	if warnings != nil {
-		r.Log.Info("cluster validation has warning",
+		logger.Info("cluster validation has warning",
 			"namespace", cluster.Namespace,
 			"name", cluster.Name,
 			"warning", warnings.Error(),
@@ -108,7 +117,7 @@ func (r *CustomClusterReconciler) internalReconcile(ctx context.Context, cluster
 		Client:   r.Client,
 		Cluster:  cluster,
 		Recorder: r.Recorder,
-		Log:      r.Log.WithName("ClusterDriver"),
+		Log:      logger.WithName("ClusterDriver"),
 	}
 	reconcileResult := driver.Reconcile(ctx, status)
 	return result.WithResult(reconcileResult)
@@ -139,4 +148,19 @@ func (r *CustomClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hackathonv1.CustomCluster{}).
 		Complete(r)
+}
+
+func NewCustomClusterController(mgr ctrl.Manager) error {
+	var (
+		cli    = mgr.GetClient()
+		logger = ctrl.Log.WithName("controllers").WithName("CustomCluster")
+	)
+	err := (&CustomClusterReconciler{
+		Client:   cli,
+		Recorder: mgr.GetEventRecorderFor("cluster-controller"),
+		Log:      logger,
+		Scheme:   mgr.GetScheme(),
+	}).SetupWithManager(mgr)
+
+	return err
 }

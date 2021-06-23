@@ -7,6 +7,16 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
   - hackathon.kaiyuanshe.cn
   resources:
   - customclusters
