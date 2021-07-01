@@ -24,9 +24,9 @@ type Driver struct {
 }
 
 func (d *Driver) Reconcile(ctx context.Context, status *Status) *results.Results {
-	if r := d.reconcileMetaCluster(ctx, status); r != nil {
+	if d.isMetaCluster() {
 		d.Log.Info("handle meta cluster")
-		return r
+		return d.reconcileMetaCluster(ctx, status)
 	}
 
 	if !hackathonv1.CheckClusterCondition(
@@ -97,15 +97,17 @@ func (d *Driver) InitCustomCluster(ctx context.Context, status *Status) *results
 	})
 }
 
-func (d *Driver) reconcileMetaCluster(ctx context.Context, status *Status) *results.Results {
+func (d *Driver) isMetaCluster() bool {
 	metaObj := d.Cluster.GetObjectMeta()
 	labels := metaObj.GetLabels()
 	if labels == nil {
-		return nil
+		return false
 	}
-	if _, ok := labels[k8stools.MetaClusterMark]; !ok {
-		return nil
-	}
+	_, ok := labels[k8stools.MetaClusterMark]
+	return ok
+}
+
+func (d *Driver) reconcileMetaCluster(ctx context.Context, status *Status) *results.Results {
 	status.Status.Status = hackathonv1.ClusterReady
 	status.Status.Conditions = hackathonv1.UpdateClusterConditions(
 		status.Status.Conditions,
