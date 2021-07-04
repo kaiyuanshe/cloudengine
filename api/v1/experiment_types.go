@@ -119,6 +119,9 @@ func UpdateExperimentConditions(conditions []ExperimentCondition, condition Expe
 // +kubebuilder:object:root=true
 
 // Experiment is the Schema for the experiments API
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.status`
+// +kubebuilder:printcolumn:name="Cluster",type=string,JSONPath=`.status.cluster`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
 type Experiment struct {
 	metav1.TypeMeta   `json:",inline"`

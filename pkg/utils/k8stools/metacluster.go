@@ -1,7 +1,7 @@
 package k8stools
 
 import (
-	hackathonv1 "cloudengine/api/v1"
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

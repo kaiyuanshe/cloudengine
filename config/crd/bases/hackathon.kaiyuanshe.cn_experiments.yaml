@@ -8,6 +8,16 @@ metadata:
   creationTimestamp: null
   name: experiments.hackathon.kaiyuanshe.cn
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.status
+    name: Status
+    type: string
+  - JSONPath: .status.cluster
+    name: Cluster
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: hackathon.kaiyuanshe.cn
   names:
     kind: Experiment

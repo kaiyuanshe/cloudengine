@@ -1,8 +1,8 @@
 package customcluster
 
 import (
-	hackathonv1 "cloudengine/api/v1"
-	"cloudengine/pkg/common/event"
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
+	"github.com/kaiyuanshe/cloudengine/pkg/common/event"
 	"reflect"
 )
 

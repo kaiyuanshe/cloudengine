@@ -17,8 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	"cloudengine/pkg/utils/k8stools"
 	"context"
+	"github.com/kaiyuanshe/cloudengine/pkg/utils/k8stools"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
@@ -38,7 +38,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	hackathonv1 "cloudengine/api/v1"
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 

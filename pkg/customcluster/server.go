@@ -1,9 +1,9 @@
 package customcluster
 
 import (
-	v1 "cloudengine/api/v1"
-	"cloudengine/pkg/types"
 	"fmt"
+	v1 "github.com/kaiyuanshe/cloudengine/api/v1"
+	"github.com/kaiyuanshe/cloudengine/pkg/types"
 	"k8s.io/klog"
 )
 

@@ -25,4 +25,3 @@ type ResourceConfig struct {
 
 	Logger logr.Logger
 }
-

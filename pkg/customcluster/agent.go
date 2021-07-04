@@ -1,9 +1,9 @@
 package customcluster
 
 import (
-	"cloudengine/pkg/types"
-	"cloudengine/pkg/utils/clients"
 	"fmt"
+	"github.com/kaiyuanshe/cloudengine/pkg/types"
+	"github.com/kaiyuanshe/cloudengine/pkg/utils/clients"
 	"k8s.io/klog"
 	"net/url"
 	"sync"

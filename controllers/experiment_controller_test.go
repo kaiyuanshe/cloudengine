@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	hackathonv1 "cloudengine/api/v1"
-	"cloudengine/pkg/experiment"
-	"cloudengine/pkg/utils/k8stools"
 	"context"
 	"fmt"
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
+	"github.com/kaiyuanshe/cloudengine/pkg/experiment"
+	"github.com/kaiyuanshe/cloudengine/pkg/utils/k8stools"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"

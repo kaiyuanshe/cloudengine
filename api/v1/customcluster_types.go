@@ -53,6 +53,8 @@ type CustomClusterStatus struct {
 // +kubebuilder:object:root=true
 
 // CustomCluster is the Schema for the customclusters API
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.status`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:subresource:status
 type CustomCluster struct {
 	metav1.TypeMeta   `json:",inline"`
