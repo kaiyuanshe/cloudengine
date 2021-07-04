@@ -1,9 +1,9 @@
-package annotations
+package metainfo
 
 import (
-	hackathonv1 "cloudengine/api/v1"
 	"context"
 	"fmt"
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +33,7 @@ func UpdateClusterAnnotations(ctx context.Context, cluster *hackathonv1.CustomCl
 	if needUpdate {
 		accessor.SetAnnotations(anns)
 		err = client.Update(ctx, cluster)
-		if err != nil{
+		if err != nil {
 			return fmt.Errorf("updatee cluster annotations failed")
 		}
 	}

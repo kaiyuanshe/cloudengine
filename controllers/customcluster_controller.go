@@ -17,15 +17,15 @@ limitations under the License.
 package controllers
 
 import (
-	"cloudengine/pkg/annotations"
-	"cloudengine/pkg/common/event"
-	"cloudengine/pkg/common/results"
-	"cloudengine/pkg/customcluster"
-	"cloudengine/pkg/eventbus"
-	"cloudengine/pkg/utils/logtool"
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	"github.com/kaiyuanshe/cloudengine/pkg/common/event"
+	"github.com/kaiyuanshe/cloudengine/pkg/common/results"
+	"github.com/kaiyuanshe/cloudengine/pkg/customcluster"
+	"github.com/kaiyuanshe/cloudengine/pkg/eventbus"
+	"github.com/kaiyuanshe/cloudengine/pkg/metainfo"
+	"github.com/kaiyuanshe/cloudengine/pkg/utils/logtool"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +34,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	hackathonv1 "cloudengine/api/v1"
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
 )
 
 // CustomClusterReconciler reconciles a CustomCluster object
@@ -69,7 +69,7 @@ func (r *CustomClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		return ctrl.Result{}, nil
 	}
 
-	if err = annotations.UpdateClusterAnnotations(ctx, cluster, r.Client); err != nil {
+	if err = metainfo.UpdateClusterAnnotations(ctx, cluster, r.Client); err != nil {
 		return ctrl.Result{}, fmt.Errorf("update cluster anntations failed: %s", err.Error())
 	}
 

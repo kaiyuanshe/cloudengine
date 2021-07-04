@@ -1,4 +1,4 @@
-module cloudengine
+module github.com/kaiyuanshe/cloudengine
 
 go 1.13
 

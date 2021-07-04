@@ -17,18 +17,16 @@ limitations under the License.
 package main
 
 import (
-	"cloudengine/pkg/customcluster"
 	"flag"
-	"os"
-
+	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
+	"github.com/kaiyuanshe/cloudengine/controllers"
+	"github.com/kaiyuanshe/cloudengine/pkg/customcluster"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	hackathonv1 "cloudengine/api/v1"
-	"cloudengine/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
