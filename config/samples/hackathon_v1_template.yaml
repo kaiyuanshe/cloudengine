@@ -2,6 +2,13 @@ apiVersion: hackathon.kaiyuanshe.cn/v1
 kind: Template
 metadata:
   name: template-sample
-spec:
+  namespace: default
+data:
   # Add fields here
-  foo: bar
+  type: Pod
+  podTemplate:
+    image: busybox
+    command:
+      - "sh"
+      - "-c"
+      - "sleep 100000000"

@@ -9,12 +9,50 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - events
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - create
   - delete
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - hackathon.kaiyuanshe.cn
@@ -52,6 +90,26 @@ rules:
   - hackathon.kaiyuanshe.cn
   resources:
   - experiments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - hackathon.kaiyuanshe.cn
+  resources:
+  - templates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - hackathon.kaiyuanshe.cn
+  resources:
+  - templates/status
   verbs:
   - get
   - patch

@@ -21,7 +21,7 @@ import (
 	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
 	"github.com/kaiyuanshe/cloudengine/controllers"
 	"github.com/kaiyuanshe/cloudengine/pkg/customcluster"
-	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"os"
@@ -31,14 +31,14 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
+	//scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
-	_ = clientgoscheme.AddToScheme(scheme)
+	utilruntime.Must(clientgoscheme.AddToScheme(clientgoscheme.Scheme))
 
-	_ = hackathonv1.AddToScheme(scheme)
+	utilruntime.Must(hackathonv1.AddToScheme(clientgoscheme.Scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -56,7 +56,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
+		Scheme:             clientgoscheme.Scheme,
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
