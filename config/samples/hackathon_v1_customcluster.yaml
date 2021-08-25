@@ -1,7 +1,11 @@
 apiVersion: hackathon.kaiyuanshe.cn/v1
 kind: CustomCluster
 metadata:
-  name: customcluster-sample
+  name: meta-cluster
+  namespace: default
+  labels:
+    meta-cluster: ""
 spec:
   # Add fields here
-  foo: bar
+  clusterTimeoutSeconds: 60
+  enablePrivateIP: true

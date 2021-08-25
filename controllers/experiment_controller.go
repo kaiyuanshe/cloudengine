@@ -45,7 +45,12 @@ type ExperimentReconciler struct {
 
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=experiments/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;delete
+// +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=templates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=hackathon.kaiyuanshe.cn,resources=templates/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=persistentvolumes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;delete;patch;update
+// +kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;delete;patch;update
 
 func (r *ExperimentReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()

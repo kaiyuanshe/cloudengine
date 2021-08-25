@@ -35,7 +35,7 @@ func (v *DataVolume) Reconcile(ctx context.Context) *results.Results {
 }
 
 func (v *DataVolume) reconcileVolume(ctx context.Context) *results.Results {
-	defer logtool.SpendTimeRecord(v.logger, "reconcile volume claim")()
+	defer logtool.SpendTimeRecord(v.logger, "reconcile data volume")()
 	result := results.NewResults(ctx)
 	var (
 		pvName = dataVolumeName(v.status.Experiment)
@@ -49,7 +49,7 @@ func (v *DataVolume) reconcileVolume(ctx context.Context) *results.Results {
 
 	config := &reconciler.ResourceConfig{
 		Client:     v.client,
-		Owner:      v.status.Experiment,
+		Owner:      nil,
 		Expected:   expected,
 		Reconciled: reconciled,
 		NeedUpdate: func() bool {
@@ -69,7 +69,7 @@ func (v *DataVolume) reconcileVolume(ctx context.Context) *results.Results {
 }
 
 func (v *DataVolume) reconcileVolumeClaim(ctx context.Context) *results.Results {
-	defer logtool.SpendTimeRecord(v.logger, "reconcile data volume")()
+	defer logtool.SpendTimeRecord(v.logger, "reconcile volume claim")()
 	result := results.NewResults(ctx)
 	var (
 		pvcName = dataVolumeClaimName(v.status.Experiment)
@@ -121,8 +121,7 @@ func buildExpectedDataVolume(experiment *hackathonv1.Experiment) *corev1.Persist
 	hostType := corev1.HostPathDirectoryOrCreate
 	return &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: experiment.Namespace,
-			Name:      dataVolumeName(experiment),
+			Name: dataVolumeName(experiment),
 			Labels: map[string]string{
 				LabelKeyClusterName:    experiment.Spec.ClusterName,
 				LabelKeyExperimentName: experiment.Name,
@@ -138,7 +137,7 @@ func buildExpectedDataVolume(experiment *hackathonv1.Experiment) *corev1.Persist
 					Type: &hostType,
 				}},
 			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimRetain,
+			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimRecycle,
 			StorageClassName:              DataVolumeStorageClass,
 			ClaimRef:                      &corev1.ObjectReference{Namespace: experiment.Namespace, Name: dataVolumeClaimName(experiment)},
 		},
