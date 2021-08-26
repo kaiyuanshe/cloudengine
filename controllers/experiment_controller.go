@@ -105,7 +105,21 @@ func (r *ExperimentReconciler) updateStatus(ctx context.Context, status *experim
 	}
 
 	log.Info("update experiment status")
-	return r.Client.Status().Update(ctx, crt)
+	err := r.Client.Status().Update(ctx, crt)
+	if err != nil && errors.IsConflict(err) {
+		log.Info("update experiment status conflict, retry.")
+		newCrt := &hackathonv1.Experiment{}
+		e := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: crt.Namespace,
+			Name:      crt.Name,
+		}, newCrt)
+		if e != nil {
+			return e
+		}
+		newCrt.Status = crt.Status
+		return r.Client.Status().Update(ctx, newCrt)
+	}
+	return err
 }
 
 func (r *ExperimentReconciler) SetupWithManager(mgr ctrl.Manager) error {
