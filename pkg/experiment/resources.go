@@ -15,17 +15,19 @@ type ResourceState struct {
 	Cluster         *hackathonv1.CustomCluster
 	Template        *hackathonv1.Template
 	EnvPod          []corev1.Pod
+	IngressSvc      *corev1.Service
 	DataVolume      *corev1.PersistentVolume
 	DataVolumeClaim *corev1.PersistentVolumeClaim
 }
 
 func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *hackathonv1.Experiment) (*ResourceState, error) {
 	var (
-		cluster  = &hackathonv1.CustomCluster{}
-		template = &hackathonv1.Template{}
-		pv       = &corev1.PersistentVolume{}
-		pvc      = &corev1.PersistentVolumeClaim{}
-		err      error
+		cluster    = &hackathonv1.CustomCluster{}
+		template   = &hackathonv1.Template{}
+		ingressSvc = &corev1.Service{}
+		pv         = &corev1.PersistentVolume{}
+		pvc        = &corev1.PersistentVolumeClaim{}
+		err        error
 	)
 
 	if err = k8sClient.Get(ctx, types.NamespacedName{
@@ -46,6 +48,16 @@ func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *h
 			return nil, fmt.Errorf("query template failed %s", err.Error())
 		}
 		return nil, fmt.Errorf("template %s not found", expr.Spec.Template)
+	}
+
+	// find ingress svc
+	if err = k8sClient.Get(ctx, types.NamespacedName{
+		Namespace: expr.Namespace,
+		Name:      ingressServiceName(expr.Name, template.Data.IngressProtocol),
+	}, ingressSvc); err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			return nil, fmt.Errorf("query ingress service failed %s", err.Error())
+		}
 	}
 
 	// find pv
@@ -86,6 +98,7 @@ func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *h
 		Cluster:         cluster,
 		Template:        template,
 		EnvPod:          podList.Items,
+		IngressSvc:      ingressSvc,
 		DataVolume:      pv,
 		DataVolumeClaim: pvc,
 	}, nil

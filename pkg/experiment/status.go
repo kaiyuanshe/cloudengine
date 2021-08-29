@@ -1,8 +1,10 @@
 package experiment
 
 import (
+	"fmt"
 	hackathonv1 "github.com/kaiyuanshe/cloudengine/api/v1"
 	"github.com/kaiyuanshe/cloudengine/pkg/common/event"
+	corev1 "k8s.io/api/core/v1"
 	"reflect"
 )
 
@@ -13,6 +15,14 @@ type Status struct {
 }
 
 func (s *Status) UpdateExperimentStatus(state *ResourceState) {
+	if state.IngressSvc != nil && state.IngressSvc.Spec.Type == corev1.ServiceTypeNodePort {
+		s.Status.IngressIPs = state.IngressSvc.Spec.ExternalIPs
+		if len(state.IngressSvc.Spec.Ports) == 1 {
+			s.Status.IngressPort = state.IngressSvc.Spec.Ports[0].NodePort
+		} else {
+			s.AddEvent(corev1.EventTypeWarning, "NoIngressPortFound", fmt.Sprintf("got ingress port: %d", len(state.IngressSvc.Spec.Ports)))
+		}
+	}
 	s.Status.Cluster = s.Experiment.Spec.ClusterName
 	s.Status.ClusterSync = false
 }

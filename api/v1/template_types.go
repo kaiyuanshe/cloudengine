@@ -33,8 +33,11 @@ type PodTemplate struct {
 
 // TemplateData defines the desired state of Template
 type TemplateData struct {
-	Type        TemplateType `json:"type"`
-	PodTemplate *PodTemplate `json:"podTemplate"`
+	Type            TemplateType              `json:"type"`
+	PodTemplate     *PodTemplate              `json:"podTemplate"`
+	IngressProtocol ExperimentIngressProtocol `json:"ingressProtocol"`
+	IngressPort     int32                     `json:"ingressPort"`
+	EndpointPort    int32                     `json:"endpointPort"`
 }
 
 // +kubebuilder:object:root=true
