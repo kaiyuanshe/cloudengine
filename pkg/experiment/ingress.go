@@ -55,14 +55,15 @@ func (r *IngressService) Reconcile(ctx context.Context) *results.Results {
 	}
 
 	r.status.AddEvent(corev1.EventTypeNormal, "DiscoverExternalIp", fmt.Sprintf("use external ip: %s", strings.Join(externalIps, ",")))
+	labels := map[string]string{
+		LabelKeyClusterName:    expr.Spec.ClusterName,
+		LabelKeyExperimentName: expr.Name,
+	}
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ingressServiceName(expr.Name, tmpl.Data.IngressProtocol),
 			Namespace: expr.Namespace,
-			Labels: map[string]string{
-				LabelKeyClusterName:    expr.Spec.ClusterName,
-				LabelKeyExperimentName: expr.Name,
-			},
+			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:        corev1.ServiceTypeNodePort,
@@ -75,6 +76,7 @@ func (r *IngressService) Reconcile(ctx context.Context) *results.Results {
 					TargetPort: intstr.FromInt(int(tmpl.Data.IngressPort)),
 				},
 			},
+			Selector: labels,
 		},
 	}
 

@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller:latest
   newName: coderhypo/cloudengine
-  newTag: 1b77e25
+  newTag: 31ec803

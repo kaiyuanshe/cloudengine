@@ -8,3 +8,7 @@ metadata:
 spec:
   clusterTimeoutSeconds: 60
   enablePrivateIP: true
+  publishIPs:
+    - 1.1.1.1
+    - 2.2.2.2
+    - 3.3.3.3
