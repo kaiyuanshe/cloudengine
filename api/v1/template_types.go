@@ -27,8 +27,9 @@ const (
 )
 
 type PodTemplate struct {
-	Image   string   `json:"image"`
-	Command []string `json:"command,omitempty"`
+	Image   string            `json:"image"`
+	Env     map[string]string `json:"env,omitempty"`
+	Command []string          `json:"command,omitempty"`
 }
 
 // TemplateData defines the desired state of Template
@@ -37,7 +38,6 @@ type TemplateData struct {
 	PodTemplate     *PodTemplate              `json:"podTemplate"`
 	IngressProtocol ExperimentIngressProtocol `json:"ingressProtocol"`
 	IngressPort     int32                     `json:"ingressPort"`
-	EndpointPort    int32                     `json:"endpointPort"`
 }
 
 // +kubebuilder:object:root=true

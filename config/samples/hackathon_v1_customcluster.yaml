@@ -6,6 +6,5 @@ metadata:
   labels:
     meta-cluster: ""
 spec:
-  # Add fields here
   clusterTimeoutSeconds: 60
   enablePrivateIP: true

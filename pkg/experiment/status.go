@@ -16,7 +16,11 @@ type Status struct {
 
 func (s *Status) UpdateExperimentStatus(state *ResourceState) {
 	if state.IngressSvc != nil && state.IngressSvc.Spec.Type == corev1.ServiceTypeNodePort {
-		s.Status.IngressIPs = state.IngressSvc.Spec.ExternalIPs
+		ingressIps := make([]string, 0)
+		if len(state.IngressSvc.Spec.ExternalIPs) > 0 {
+			ingressIps = state.IngressSvc.Spec.ExternalIPs
+		}
+		s.Status.IngressIPs = ingressIps
 		if len(state.IngressSvc.Spec.Ports) == 1 {
 			s.Status.IngressPort = state.IngressSvc.Spec.Ports[0].NodePort
 		} else {

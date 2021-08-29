@@ -120,7 +120,11 @@ var _ = BeforeSuite(func(done Done) {
 			Name:      k8stools.MetaClusterName,
 		}, metaCluster); err != nil {
 			if errors.IsNotFound(err) {
-				if err = k8sClient.Create(context.Background(), k8stools.NewMetaCluster()); err != nil {
+				cluster, err := k8stools.NewMetaCluster(k8sClient)
+				if err != nil {
+					panic(err)
+				}
+				if err = k8sClient.Create(context.Background(), cluster); err != nil {
 					panic(err)
 				}
 			}

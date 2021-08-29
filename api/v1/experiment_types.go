@@ -71,13 +71,13 @@ const (
 
 // ExperimentStatus defines the observed state of Experiment
 type ExperimentStatus struct {
-	Status      ExperimentEnvStatus       `json:"status"`
-	IngressIPs  []string                  `json:"ingressIPs"`
-	IngressPort int32                     `json:"ingressPort"`
-	Protocol    ExperimentIngressProtocol `json:"protocol"`
-	Cluster     string                    `json:"cluster"`
-	ClusterSync bool                      `json:"clusterSync"`
-	Conditions  []ExperimentCondition     `json:"conditions"`
+	Status      ExperimentEnvStatus       `json:"status,omitempty"`
+	IngressIPs  []string                  `json:"ingressIPs,omitempty"`
+	IngressPort int32                     `json:"ingressPort,omitempty"`
+	Protocol    ExperimentIngressProtocol `json:"protocol,omitempty"`
+	Cluster     string                    `json:"cluster,omitempty"`
+	ClusterSync bool                      `json:"clusterSync,omitempty"`
+	Conditions  []ExperimentCondition     `json:"conditions,omitempty"`
 }
 
 func NewExperimentCondition(conditionType ExperimentConditionType, status ExperimentConditionStatus, reason, message string) ExperimentCondition {

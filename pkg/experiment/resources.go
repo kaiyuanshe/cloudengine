@@ -58,6 +58,7 @@ func NewExprResourceStatus(ctx context.Context, k8sClient client.Client, expr *h
 		if client.IgnoreNotFound(err) != nil {
 			return nil, fmt.Errorf("query ingress service failed %s", err.Error())
 		}
+		ingressSvc = nil
 	}
 
 	// find pv

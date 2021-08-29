@@ -90,13 +90,17 @@ spec:
                 - type
                 type: object
               type: array
+            ingressIPs:
+              items:
+                type: string
+              type: array
+            ingressPort:
+              format: int32
+              type: integer
+            protocol:
+              type: string
             status:
               type: string
-          required:
-          - cluster
-          - clusterSync
-          - conditions
-          - status
           type: object
       type: object
   version: v1

@@ -44,6 +44,13 @@ func (c *Controller) Reconcile(ctx context.Context, status *Status) *results.Res
 		logger:        c.Logger.WithName("DataVolume"),
 	}).Reconcile(ctx))
 
+	result.WithResult((&IngressService{
+		client:        c.Client,
+		status:        status,
+		resourceState: resourceState,
+		logger:        c.Logger.WithName("IngressService"),
+	}).Reconcile(ctx))
+
 	podResult := c.reconcileExperimentPods(ctx, status, resourceState)
 	status.UpdateExperimentStatus(resourceState)
 	return result.WithResult(podResult)
@@ -122,6 +129,13 @@ func buildExpectedEnvPod(experiment *hackathonv1.Experiment, template *hackathon
 	if podCfg == nil {
 		return nil, fmt.Errorf("pod template is nil")
 	}
+	envs := make([]corev1.EnvVar, 0)
+	for k, v := range template.Data.PodTemplate.Env {
+		envs = append(envs, corev1.EnvVar{
+			Name:  k,
+			Value: v,
+		})
+	}
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      experiment.Name,
@@ -137,6 +151,7 @@ func buildExpectedEnvPod(experiment *hackathonv1.Experiment, template *hackathon
 					Name:    "experiment",
 					Image:   podCfg.Image,
 					Command: podCfg.Command,
+					Env:     envs,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "data-volume",

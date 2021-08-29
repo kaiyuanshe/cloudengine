@@ -26,7 +26,9 @@ var _ = Describe("test-experiment-reconcile", func() {
 				Namespace: "default",
 			},
 			Data: hackathonv1.TemplateData{
-				Type: hackathonv1.PodTemplateType,
+				Type:            hackathonv1.PodTemplateType,
+				IngressPort:     5091,
+				IngressProtocol: hackathonv1.ExperimentIngressVNC,
 				PodTemplate: &hackathonv1.PodTemplate{
 					Image:   "busybox",
 					Command: []string{"sh", "-c", "sleep 100000000"},

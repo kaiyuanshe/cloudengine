@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"strings"
 )
 
 type IngressService struct {
@@ -31,19 +32,29 @@ func (r *IngressService) Reconcile(ctx context.Context) *results.Results {
 	)
 	result := results.NewResults(ctx)
 
+	externalIps := make([]string, 0)
+	switch {
+	case len(cluster.Spec.PublishIps) > 0:
+		externalIps = cluster.Spec.PublishIps
+	case cluster.Spec.EnablePrivateIP && len(cluster.Spec.PrivateIps) > 0:
+		r.logger.Info("cluster private ip enabled, use private ip as external ip")
+		externalIps = cluster.Spec.PrivateIps
+	}
+
 	if old != nil {
 		old.Spec.Type = corev1.ServiceTypeNodePort
-		old.Spec.ExternalIPs = cluster.Spec.PublishIps
+		old.Spec.ExternalIPs = externalIps
 		for i := range old.Spec.Ports {
 			if old.Spec.Ports[i].Name == string(tmpl.Data.IngressProtocol) {
 				old.Spec.Ports[i].Protocol = corev1.ProtocolTCP
 				old.Spec.Ports[i].Port = tmpl.Data.IngressPort
-				old.Spec.Ports[i].TargetPort = intstr.FromInt(int(tmpl.Data.EndpointPort))
+				old.Spec.Ports[i].TargetPort = intstr.FromInt(int(tmpl.Data.IngressPort))
 			}
 		}
 		return result.WithError(r.client.Update(ctx, old))
 	}
 
+	r.status.AddEvent(corev1.EventTypeNormal, "DiscoverExternalIp", fmt.Sprintf("use external ip: %s", strings.Join(externalIps, ",")))
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ingressServiceName(expr.Name, tmpl.Data.IngressProtocol),
@@ -55,13 +66,13 @@ func (r *IngressService) Reconcile(ctx context.Context) *results.Results {
 		},
 		Spec: corev1.ServiceSpec{
 			Type:        corev1.ServiceTypeNodePort,
-			ExternalIPs: cluster.Spec.PublishIps,
+			ExternalIPs: externalIps,
 			Ports: []corev1.ServicePort{
 				{
 					Name:       string(tmpl.Data.IngressProtocol),
 					Protocol:   corev1.ProtocolTCP,
 					Port:       tmpl.Data.IngressPort,
-					TargetPort: intstr.FromInt(int(tmpl.Data.EndpointPort)),
+					TargetPort: intstr.FromInt(int(tmpl.Data.IngressPort)),
 				},
 			},
 		},

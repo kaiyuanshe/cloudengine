@@ -4,7 +4,6 @@ metadata:
   name: experiment-sample
   namespace: default
 spec:
-  # Add fields here
   pause: false
   template: template-sample
   clusterName: meta-cluster

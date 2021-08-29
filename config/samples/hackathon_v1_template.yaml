@@ -4,11 +4,11 @@ metadata:
   name: template-sample
   namespace: default
 data:
-  # Add fields here
   type: Pod
   podTemplate:
-    image: busybox
-    command:
-      - "sh"
-      - "-c"
-      - "sleep 100000000"
+    image: coderhypo/ubunut-kylin:test-1
+    command: [ "bash", "-c", "vncserver :1 -localhost no -geometry 1920x1080 -depth 24 && tail -F /home/ubuntukylin/.vnc/*.log" ]
+    env:
+      USER: ubuntukylin
+  ingressProtocol: vnc
+  ingressPort: 5901

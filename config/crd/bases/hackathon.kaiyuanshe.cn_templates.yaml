@@ -27,12 +27,21 @@ spec:
         data:
           description: TemplateData defines the desired state of Template
           properties:
+            ingressPort:
+              format: int32
+              type: integer
+            ingressProtocol:
+              type: string
             podTemplate:
               properties:
                 command:
                   items:
                     type: string
                   type: array
+                env:
+                  additionalProperties:
+                    type: string
+                  type: object
                 image:
                   type: string
               required:
@@ -41,6 +50,8 @@ spec:
             type:
               type: string
           required:
+          - ingressPort
+          - ingressProtocol
           - podTemplate
           - type
           type: object
