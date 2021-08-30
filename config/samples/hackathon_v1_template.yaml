@@ -12,3 +12,6 @@ data:
       USER: ubuntukylin
   ingressProtocol: vnc
   ingressPort: 5901
+  vnc:
+    username: ubuntukylin
+    password: ubuntukylin

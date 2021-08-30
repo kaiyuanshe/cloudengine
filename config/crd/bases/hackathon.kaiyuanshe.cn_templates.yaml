@@ -49,6 +49,16 @@ spec:
               type: object
             type:
               type: string
+            vnc:
+              properties:
+                password:
+                  type: string
+                username:
+                  type: string
+              required:
+              - password
+              - username
+              type: object
           required:
           - ingressPort
           - ingressProtocol

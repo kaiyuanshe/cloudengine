@@ -78,6 +78,8 @@ type ExperimentStatus struct {
 	Cluster     string                    `json:"cluster,omitempty"`
 	ClusterSync bool                      `json:"clusterSync,omitempty"`
 	Conditions  []ExperimentCondition     `json:"conditions,omitempty"`
+
+	VNC *VNCConfig `json:"vnc,omitempty"`
 }
 
 func NewExperimentCondition(conditionType ExperimentConditionType, status ExperimentConditionStatus, reason, message string) ExperimentCondition {

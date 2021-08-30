@@ -38,6 +38,8 @@ type TemplateData struct {
 	PodTemplate     *PodTemplate              `json:"podTemplate"`
 	IngressProtocol ExperimentIngressProtocol `json:"ingressProtocol"`
 	IngressPort     int32                     `json:"ingressPort"`
+
+	VNC *VNCConfig `json:"vnc,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -57,6 +59,11 @@ type TemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Template `json:"items"`
+}
+
+type VNCConfig struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func init() {

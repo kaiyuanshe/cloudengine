@@ -27,6 +27,13 @@ func (s *Status) UpdateExperimentStatus(state *ResourceState) {
 			s.AddEvent(corev1.EventTypeWarning, "NoIngressPortFound", fmt.Sprintf("got ingress port: %d", len(state.IngressSvc.Spec.Ports)))
 		}
 	}
+
+	// update connect config
+	switch state.Template.Data.IngressProtocol {
+	case hackathonv1.ExperimentIngressVNC:
+		s.Status.VNC = state.Template.Data.VNC
+	}
+
 	s.Status.Cluster = s.Experiment.Spec.ClusterName
 	s.Status.ClusterSync = false
 }
