@@ -40,6 +40,7 @@ type TemplateData struct {
 	IngressPort     int32                     `json:"ingressPort"`
 
 	VNC *VNCConfig `json:"vnc,omitempty"`
+	SSH *SSHConfig `json:"ssh,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -64,6 +65,12 @@ type TemplateList struct {
 type VNCConfig struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type SSHConfig struct {
+	Username string `json:"username"`
+	Password string `json:"password,omitempty"`
+	Key      string `json:"key,omitempty"`
 }
 
 func init() {

@@ -80,6 +80,7 @@ type ExperimentStatus struct {
 	Conditions  []ExperimentCondition     `json:"conditions,omitempty"`
 
 	VNC *VNCConfig `json:"vnc,omitempty"`
+	SSH *SSHConfig `json:"ssh,omitempty"`
 }
 
 func NewExperimentCondition(conditionType ExperimentConditionType, status ExperimentConditionStatus, reason, message string) ExperimentCondition {

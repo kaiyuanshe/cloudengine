@@ -29,9 +29,14 @@ func (s *Status) UpdateExperimentStatus(state *ResourceState) {
 	}
 
 	// update connect config
+	s.Status.Protocol = state.Template.Data.IngressProtocol
 	switch state.Template.Data.IngressProtocol {
 	case hackathonv1.ExperimentIngressVNC:
 		s.Status.VNC = state.Template.Data.VNC
+	case hackathonv1.ExperimentIngressSSH:
+		s.Status.SSH = state.Template.Data.SSH
+	default:
+		s.AddEvent(corev1.EventTypeWarning, "NoIngressConfig", fmt.Sprintf("ingress protoco %s not supported", state.Template.Data.IngressProtocol))
 	}
 
 	s.Status.Cluster = s.Experiment.Spec.ClusterName
