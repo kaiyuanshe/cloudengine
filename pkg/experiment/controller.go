@@ -37,6 +37,8 @@ func (c *Controller) Reconcile(ctx context.Context, status *Status) *results.Res
 		return result.WithError(err)
 	}
 
+	_ = c.checkExprTemplate(ctx, status, resourceState)
+
 	result.WithResult((&DataVolume{
 		client:        c.Client,
 		status:        status,
@@ -122,6 +124,27 @@ func (c *Controller) reconcileExperimentPods(ctx context.Context, status *Status
 		}
 		return reconcile.Result{}, nil
 	})
+}
+
+func (c *Controller) checkExprTemplate(ctx context.Context, status *Status, rs *ResourceState) error {
+	var (
+		template = rs.Template
+	)
+	switch template.Data.IngressProtocol {
+	case hackathonv1.ExperimentIngressVNC:
+		if template.Data.VNC == nil {
+			c.Logger.V(3).Info("template vnc config is nil")
+			status.AddEvent(corev1.EventTypeWarning, event.ReasonUnexpected, "template vnc config is nil")
+		}
+	case hackathonv1.ExperimentIngressSSH:
+		if template.Data.SSH == nil {
+			c.Logger.V(3).Info("template ssh config is nil")
+			status.AddEvent(corev1.EventTypeWarning, event.ReasonUnexpected, "template ssh config is nil")
+		}
+	default:
+		c.Logger.V(3).Info("template ingress protocol not support", "protocol", template.Data.IngressProtocol)
+	}
+	return nil
 }
 
 func buildExpectedEnvPod(experiment *hackathonv1.Experiment, template *hackathonv1.Template) (*corev1.Pod, error) {
