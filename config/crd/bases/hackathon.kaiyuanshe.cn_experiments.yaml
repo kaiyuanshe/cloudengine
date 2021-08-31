@@ -99,6 +99,17 @@ spec:
               type: integer
             protocol:
               type: string
+            ssh:
+              properties:
+                key:
+                  type: string
+                password:
+                  type: string
+                username:
+                  type: string
+              required:
+              - username
+              type: object
             status:
               type: string
             vnc:

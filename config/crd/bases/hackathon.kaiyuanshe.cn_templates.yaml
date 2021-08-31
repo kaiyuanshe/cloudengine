@@ -47,6 +47,17 @@ spec:
               required:
               - image
               type: object
+            ssh:
+              properties:
+                key:
+                  type: string
+                password:
+                  type: string
+                username:
+                  type: string
+              required:
+              - username
+              type: object
             type:
               type: string
             vnc:
