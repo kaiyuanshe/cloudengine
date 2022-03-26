@@ -95,5 +95,5 @@ func (r *IngressService) Reconcile(ctx context.Context) *results.Results {
 }
 
 func ingressServiceName(exprName string, protocol hackathonv1.ExperimentIngressProtocol) string {
-	return fmt.Sprintf("%s-%s-service", exprName, protocol)
+	return fmt.Sprintf("svc-%s-%s", exprName, protocol)
 }
